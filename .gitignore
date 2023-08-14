@@ -24,3 +24,6 @@ output/
 # R data files #
 *.[rR][dD][aA][tT][aA]
 *.[rR][dD][sS]
+
+# Include metadata files
+!metadata/*/*.xlsx

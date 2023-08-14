@@ -14,8 +14,46 @@
 
 ### 1 - Load packages ----
 
+library(here)
+library(readr)
+library(readxl)
+library(writexl)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(janitor)
+library(cli)
+library(usethis)
+library(purrr)
+
 
 ### 2 - Load functions (from functions folder) ----
+
+source(here("functions", "check_headers.R"))
+source(here("functions", "clean_strings.R"))
+
+
+### 3 - Set parameters ----
+
+year <- 2022
+
+all_las <- c(
+  "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee", 
+  "East Renfrewshire", "Edinburgh City", "Falkirk", "Glasgow", 
+  "Moray", "North Ayrshire", "Perth & Kinross", "Renfrewshire", 
+  "Scottish Borders", "Shetland", "South Ayrshire", "Stirling"
+)
+
+all_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
+
+# Define expected pattern for question numbers in header
+# Accepted patterns: Q1. Q1.1. Q11.1 Q1.11 Q11.11
+q_pattern <- "Q\\d{1,2}\\.(\\d{1,2}\\.)?"
+
+
+### 4 - Create output folder ----
+
+use_directory(paste0("output/", year))
 
 
 ### END OF SCRIPT ###

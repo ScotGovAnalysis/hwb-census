@@ -79,16 +79,16 @@ summary <-
 
 # Key for what each column in summary data means
 key <- tibble(col = names(header_issues)) |>
-  mutate(meaning = case_match(col,
-    "year" ~ "Year",
-    "la" ~ "Local Authority",
-    "stage" ~ "Stage of school",
-    "issue" ~ "Type of issue; e.g. extra column, missing column",
-    "h" ~ "Header",
-    "q_raw" ~ "Question number from raw data",
-    "q_exp" ~ "Expected question number",
-    "n_raw" ~ "Number of headers in raw data",
-    "n_exp" ~ "Number of headers in expected data"
+  mutate(meaning = case_when(
+    col == "year" ~ "Year",
+    col == "la" ~ "Local Authority",
+    col == "stage" ~ "Stage of school",
+    col == "issue" ~ "Type of issue; e.g. extra column, missing column",
+    col == "h" ~ "Header",
+    col == "q_raw" ~ "Question number from raw data",
+    col == "q_exp" ~ "Expected question number",
+    col == "n_raw" ~ "Number of headers in raw data",
+    col == "n_exp" ~ "Number of headers in expected data"
   ))
 
 # Structure output as list - each element will be it's own sheet in excel file

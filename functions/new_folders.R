@@ -9,11 +9,16 @@ new_folders <- function(year, la) {
     year, "/", la
   )
   
-  archive <- paste0(dir, "/Archive")
-  sub_use <- paste0(dir, "/Substance Use")
+  if(!dir.exists(dir)) dir.create(dir)
   
-  if(!dir.exists(dir))     dir.create(dir)
-  if(!dir.exists(archive)) dir.create(archive)
-  if(!dir.exists(sub_use)) dir.create(sub_use)
+  folders <- paste0(
+    dir, "/", 
+    c("Archive", "Substance Use")
+  )
+  
+  purrr::walk(
+    folders,
+    \(x) if(!dir.exists(x)) dir.create(x)
+  )
   
 }

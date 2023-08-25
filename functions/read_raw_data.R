@@ -1,9 +1,9 @@
-read_raw_data <- function(year, la, stage, headers_only = FALSE) {
+read_raw_data <- function(year, la, stage, subfolder, headers_only = FALSE) {
   
   source(here("functions", "clean_strings.R"))
   source(here("functions", "identify_file.R"))
   
-  file <- identify_file(year, la, stage)
+  file <- identify_file(year, la, stage, subfolder)
   
   # Get file extension
   type <- tools::file_ext(file)

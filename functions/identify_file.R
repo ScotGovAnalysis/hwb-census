@@ -1,4 +1,4 @@
-identify_file <- function(year, la, stage) {
+identify_file <- function(year, la, stage, subfolder) {
   
   # Define what stages are valid
   exp_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
@@ -21,7 +21,7 @@ identify_file <- function(year, la, stage) {
   dir <- paste0(
     "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey",
     "/R/RAP Project/raw_data/", 
-    year, "/", la
+    year, "/", la, "/", subfolder
   )
   
   dir_short <- paste("raw_data", year, la, sep = "/")

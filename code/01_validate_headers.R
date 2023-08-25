@@ -63,7 +63,7 @@ exp_headers <- exp_headers |>
 header_issues <- 
   pmap_dfr(
     expand_grid(all_las, all_stages),
-    ~ check_headers(year, .x, .y, exp_headers[[.y]], q_pattern)
+    ~ check_headers(year, .x, .y, "01_submitted_data", exp_headers[[.y]], q_pattern)
   )
 
 # Summary of number of issues by LA and Stage

@@ -1,4 +1,4 @@
-check_headers <- function(year, la, stage, exp_headers, q_pattern) {
+check_headers <- function(year, la, stage, subfolder, exp_headers, q_pattern) {
   
   cli_inform(c("i" = "Checking headers: {la}, {stage}"))
   
@@ -18,7 +18,7 @@ check_headers <- function(year, la, stage, exp_headers, q_pattern) {
   source(here("functions", "merge_headers.R"))
   
   # Read in raw data to get headers and first row (for possible second header)
-  raw <- read_raw_data(year, la, stage, headers_only = TRUE)
+  raw <- read_raw_data(year, la, stage, subfolder, headers_only = TRUE)
   
   # Get number of header rows
   # If the first column answer is NA or the first header is ..1,

@@ -3,8 +3,10 @@
 .RData
 .Ruserdata
 
-# 'data' folder #
+# data folders #
 data/
+raw-data/
+output/
 
 # Common text files that may contain data #
 *.[cC][sS][vV]
@@ -22,3 +24,6 @@ data/
 # R data files #
 *.[rR][dD][aA][tT][aA]
 *.[rR][dD][sS]
+
+# Include metadata files
+!metadata/*/*.xlsx

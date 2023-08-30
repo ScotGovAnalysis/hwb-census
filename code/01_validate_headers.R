@@ -35,16 +35,14 @@ exp_headers <- exp_headers |>
       x |>
         # Recode character NAs as system NAs
         mutate(across(where(is.character), ~ na_if(., "NA"))) |>
-        # Remove la_code header (this is not included in raw data submissions)
-        filter(code != "la_code") |>
+        # Remove headers added by SG (not included in raw data submissions)
+        filter(!code %in% c("la_code", "seed_code")) |>
         # Keep raw header columns only
         select(question_header1, question_header2) |>
         # Clean strings
         mutate(across(everything(), clean_strings)) |>
         # Use merged headers only
         select(h = question_header2) |>
-        # Remove duplicates (remove this?)
-        distinct() |>
         # Extract question number
         mutate(
           q  = str_extract(h, q_pattern),

@@ -1,5 +1,5 @@
 #########################################################################
-# Name of file - 01_validate_headers.R
+# Name of file - 02_check_validate_headers.R
 # Health and Wellbeing (HWB) Census 
 #
 # Type - Reproducible Analytical Pipeline (RAP)

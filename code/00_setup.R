@@ -39,9 +39,9 @@ source(here("functions", "new_folders.R"))
 year <- 2022
 
 all_las <- c(
-  "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee", 
-  "East Renfrewshire", "Edinburgh City", "Falkirk", "Glasgow", 
-  "Moray", "North Ayrshire", "Perth & Kinross", "Renfrewshire", 
+  "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee",
+  "East Renfrewshire", "Edinburgh City", "Falkirk", "Glasgow",
+  "Moray", "North Ayrshire", "Perth & Kinross", "Renfrewshire",
   "Scottish Borders", "Shetland", "South Ayrshire", "Stirling"
 )
 

@@ -80,15 +80,24 @@ names(raw_data) <- c(all_las)
 
 # Create function to rename each tibble within list of LA's to correct stage
 rename_tibbles <- function(lst) {
-  
   names(lst) <- all_stages
-  
   return(lst)
 }
 
 raw_data <- lapply(raw_data, rename_tibbles)
 
 
+# Apply clean_strings to raw_data to header row only
+raw_data <- raw_data %>%
+  map(function(sublist) {
+    sublist %>%
+      map_if(is.data.frame, ~ {
+        header <- names(.x)
+        body <- .x
+        names(body) <- clean_strings(header)
+        body
+      })
+  })
 
 
 # Define a function to adjust the header row for each tibble
@@ -169,8 +178,18 @@ for (i in seq_along(renamed_headers)) {
   missing_headers_list[[list_name]] <- list_missing_headers
 }
 
-# Print or work with the results as needed
-print(missing_headers_list)
+
+# Print only the tibbles with differing headers
+for (list_name in names(missing_headers_list)) {
+  list_missing_headers <- missing_headers_list[[list_name]]
+  for (tibble_name in names(list_missing_headers)) {
+    missing_headers <- list_missing_headers[[tibble_name]]
+    if (!identical(missing_headers, character(0))) {
+      cat("List:", list_name, "| Tibble:", tibble_name, "| Missing Headers:", toString(missing_headers), "\n")
+    }
+  }
+}
+
 
 
 ### 4 - Save renamed headers ----

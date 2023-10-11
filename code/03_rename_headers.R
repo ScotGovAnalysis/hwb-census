@@ -87,19 +87,6 @@ rename_tibbles <- function(lst) {
 raw_data <- lapply(raw_data, rename_tibbles)
 
 
-# Apply clean_strings to raw_data to header row only
-raw_data <- raw_data %>%
-  map(function(sublist) {
-    sublist %>%
-      map_if(is.data.frame, ~ {
-        header <- names(.x)
-        body <- .x
-        names(body) <- clean_strings(header)
-        body
-      })
-  })
-
-
 # Define a function to adjust the header row for each tibble
 # For tibbles with two header rows, they should be merged so the header row matches exp_headers
 adjust_header <- function(tbl){
@@ -123,6 +110,17 @@ adjust_header <- function(tbl){
 # Apply adjust_header function to every tibble
 adjusted_headers <- map(raw_data, ~ map(.x, ~ adjust_header(.x)))
 
+# Apply clean_strings to adjusted_headers to header row only
+adjusted_headers <- adjusted_headers %>%
+  map(function(sublist) {
+    sublist %>%
+      map_if(is.data.frame, ~ {
+        header <- names(.x)
+        body <- .x
+        names(body) <- clean_strings(header)
+        body
+      })
+  })
 
 # Define a function to rename the columns of each tibble
 rename_columns <- function(tibble) {
@@ -134,7 +132,6 @@ rename_columns <- function(tibble) {
 renamed_headers <- lapply(adjusted_headers, function(sublist) {
   lapply(sublist, rename_columns)
 })
-
 
 
 
@@ -191,8 +188,79 @@ for (list_name in names(missing_headers_list)) {
 }
 
 
+### 4 - Rename column headers in adjusted_headers so they match the column "code" in exp_headers ----
 
-### 4 - Save renamed headers ----
+# Function to rename tibble column headers
+rename_headers <- function(tibble, exp_tibble) {
+  new_names <- exp_tibble$code
+  colnames(tibble) <- new_names
+  return(tibble)
+}
+
+# Loop through 'renamed_headers' and rename the columns using 'exp_headers'
+for (list_name in names(renamed_headers)) {
+  for (tibble_name in names(renamed_headers[[list_name]])) {
+    renamed_headers[[list_name]][[tibble_name]] <- rename_headers(
+      renamed_headers[[list_name]][[tibble_name]], 
+      exp_headers[[tibble_name]]
+    )
+  }
+}
+
+### 5 - Check headers of renamed_headers have all been renamed, flag those which haven't ----
+
+# Check all headers have been renamed
+# Create an empty list to store the results
+missing_headers_list <- list()
+
+# Iterate through each list of tibbles in renamed_headers
+for (i in seq_along(renamed_headers)) {
+  # Get the name of the current list
+  list_name <- names(renamed_headers)[i]
+  
+  # Create a list to store the missing headers for the current list
+  list_missing_headers <- list()
+  
+  # Iterate through each tibble in the current list
+  for (j in seq_along(renamed_headers[[i]])) {
+    # Get the name of the current tibble
+    tibble_name <- names(renamed_headers[[i]])[j]
+    
+    # Extract the current tibble from renamed_headers
+    current_renamed_tibble <- renamed_headers[[i]][[j]]
+    
+    # Find the corresponding tibble in exp_headers by name
+    current_exp_tibble <- exp_headers[[tibble_name]]
+    
+    # Get the values in the "code" column of the current exp_tibble
+    exp_code_values <- current_exp_tibble$code
+    
+    # Find headers in current_renamed_tibble that are not in exp_code_values
+    missing_headers <- setdiff(colnames(current_renamed_tibble), exp_code_values)
+    
+    # Store the missing headers for the current tibble
+    list_missing_headers[[tibble_name]] <- missing_headers
+  }
+  
+  # Store the missing headers for the current list
+  missing_headers_list[[list_name]] <- list_missing_headers
+}
+
+
+# Print only the tibbles with differing headers
+for (list_name in names(missing_headers_list)) {
+  list_missing_headers <- missing_headers_list[[list_name]]
+  for (tibble_name in names(list_missing_headers)) {
+    missing_headers <- list_missing_headers[[tibble_name]]
+    if (!identical(missing_headers, character(0))) {
+      cat("List:", list_name, "| Tibble:", tibble_name, "| Missing Headers:", toString(missing_headers), "\n")
+    }
+  }
+}
+
+
+
+### 6 - Save renamed headers ----
 
 # Save excel file to output folder
 # Loop through each LA and list of stage tibbles

@@ -270,7 +270,8 @@ for (folder_name in all_las) {
   # Loop through each tibble in the list
   for (tibble_name in names(tibble_list)) {
     # Create the file name for the Excel file
-    file_name <- file.path("//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data", year, folder_name, "03_renamed_headers", paste0(folder_name, "_", tibble_name, ".xlsx"))
+    file_name <- file.path(raw_data_folder, year, folder_name, "03_renamed_headers", 
+                           paste0(folder_name, "_", tibble_name, ".xlsx"))
     
     # Get the tibble
     tibble_data <- tibble_list[[tibble_name]]

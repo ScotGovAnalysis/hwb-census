@@ -261,7 +261,7 @@ for (list_name in names(missing_headers_list)) {
 
 ### 6 - Save renamed headers ----
 
-# Save excel file to output folder
+# Save csv file to output folder
 # Loop through each LA and list of stage tibbles
 for (folder_name in all_las) {
   # Get the list of tibbles for the current LA
@@ -269,15 +269,15 @@ for (folder_name in all_las) {
   
   # Loop through each tibble in the list
   for (tibble_name in names(tibble_list)) {
-    # Create the file name for the Excel file
+    # Create the file name for the csv file
     file_name <- file.path(raw_data_folder, year, folder_name, "03_renamed_headers", 
-                           paste0(folder_name, "_", tibble_name, ".xlsx"))
+                           paste0(folder_name, "_", tibble_name, ".csv"))
     
     # Get the tibble
     tibble_data <- tibble_list[[tibble_name]]
     
-    # Save the tibble as an Excel file
-    write_xlsx(tibble_data, file_name)
+    # Save the tibble as an csv file
+    write.csv(tibble_data, file_name)
   }
 }
 

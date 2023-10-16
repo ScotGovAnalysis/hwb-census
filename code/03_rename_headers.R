@@ -277,7 +277,7 @@ for (folder_name in all_las) {
     tibble_data <- tibble_list[[tibble_name]]
     
     # Save the tibble as an csv file
-    write.csv(tibble_data, file_name)
+    write.csv(tibble_data, file_name, row.names = FALSE)
   }
 }
 

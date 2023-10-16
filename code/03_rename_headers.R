@@ -192,9 +192,8 @@ for (list_name in names(missing_headers_list)) {
 
 # Function to rename tibble column headers
 rename_headers <- function(tibble, exp_tibble) {
-  new_names <- exp_tibble$code
-  colnames(tibble) <- new_names
-  return(tibble)
+  recode_vec <- setNames(exp_tibble$h, exp_tibble$code)
+  rename(tibble, any_of(recode_vec))
 }
 
 # Loop through 'renamed_headers' and rename the columns using 'exp_headers'

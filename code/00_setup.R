@@ -32,6 +32,7 @@ library(purrr)
 source(here("functions", "check_headers.R"))
 source(here("functions", "clean_strings.R"))
 source(here("functions", "new_folders.R"))
+source(here("functions", "new_folders_merged.R"))
 
 
 ### 3 - Set parameters ----
@@ -63,6 +64,10 @@ for (la in all_las){
   new_folders(year, la)
 }
 
+
+### 6 - Run new_folders_merged function to create new folders for each LA
+
+new_folders_merged(year)
 
 
 

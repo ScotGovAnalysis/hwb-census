@@ -13,7 +13,7 @@ new_folders <- function(year, la) {
   
   folders <- paste0(
     dir, "/", 
-    c("Archive", "Substance Use", "01_submitted_data", "02_validated_headers", "03_validated_rows")
+    c("Archive", "Substance Use", "01_submitted_data", "02_validated_headers", "03_renamed_headers")
   )
   
   purrr::walk(

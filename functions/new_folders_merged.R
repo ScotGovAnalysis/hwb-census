@@ -11,14 +11,4 @@ new_folders_merged <- function(year) {
   
   if(!dir.exists(dir_merged)) dir.create(dir_merged)
   
-  folders_merged <- paste0(
-    dir_merged, "/", 
-    c("04_merged_data")
-  )
-  
-  purrr::walk(
-    folders_merged,
-    \(x) if(!dir.exists(x)) dir.create(x)
-  )
-  
 }

@@ -92,11 +92,11 @@ for (name in all_stages) {
 
 
 
+### 4 - Save as excel file to Merged folder ----
 
-### 4 - Save as excel file to  ----
 write_xlsx(
-  merged_data, 
-  here("output", year, paste0(year, "_04_merged_data.xlsx"))
+  merged_data,
+  file.path(raw_data_folder, year, "Merged", paste0("04_merged_data.xlsx"))
 )
 
 

@@ -32,16 +32,22 @@ library(purrr)
 source(here("functions", "check_headers.R"))
 source(here("functions", "clean_strings.R"))
 source(here("functions", "new_folders.R"))
+source(here("functions", "new_folders_merged.R"))
 
 
-### 3 - Set parameters ----
+### 3 - Set file path for raw data ----
+
+raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
+
+
+### 4 - Set parameters ----
 
 year <- 2022
 
 all_las <- c(
-  "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee", 
-  "East Renfrewshire", "Edinburgh City", "Falkirk", "Glasgow", 
-  "Moray", "North Ayrshire", "Perth & Kinross", "Renfrewshire", 
+  "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee",
+  "East Renfrewshire", "Edinburgh City", "Falkirk", "Glasgow",
+  "Moray", "North Ayrshire", "Perth & Kinross", "Renfrewshire",
   "Scottish Borders", "Shetland", "South Ayrshire", "Stirling"
 )
 
@@ -52,17 +58,21 @@ all_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
 q_pattern <- "Q\\d{1,2}\\.(\\d{1,2}\\.)?"
 
 
-### 4 - Create output folder ----
+### 5 - Create output folder ----
 
 use_directory(paste0("output/", year))
 
 
-### 5 - Run new_folders function to create new folders for each LA
+### 6 - Run new_folders function to create new folders for each LA
 
 for (la in all_las){
   new_folders(year, la)
 }
 
+
+### 7 - Run new_folders_merged function to create new folders for each LA
+
+new_folders_merged(year)
 
 
 

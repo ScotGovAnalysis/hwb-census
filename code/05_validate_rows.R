@@ -35,15 +35,13 @@ exp_rows <-
 ### 2 - Read in data ----
 
 # Read in merged data for each stage and store as a list of data frames
+
 act_rows <- 
   map(
     set_names(all_stages), 
-    ~ read_xlsx(here(
-      "output",
-      year,
-      paste0(year, "_04_merged_data.xlsx")),
-             sheet = .x
-    )
+    ~ read_xlsx(
+      file.path(raw_data_folder, year, "Merged", paste0("04_merged_data.xlsx"))),
+          sheet = .x
   )
 
 # Remove columns "scn" and "school_name"
@@ -133,7 +131,7 @@ list_of_dataframes <- lapply(unexp_rows_filtered, list_to_dataframe)
 
 
 
-### 5 - Save row validation summary
+### 5 - Save row validation summary to output folder
 
 # Save excel file to output folder
 write_xlsx(

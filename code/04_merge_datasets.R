@@ -93,4 +93,13 @@ for (name in all_stages) {
 
 
 
+### 4 - Save as excel file to  ----
+write_xlsx(
+  merged_data, 
+  here("output", year, paste0(year, "_04_merged_data.xlsx"))
+)
+
+
+### END OF SCRIPT ###
+
 

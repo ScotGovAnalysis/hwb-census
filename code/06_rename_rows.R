@@ -47,16 +47,19 @@ validated_rows <- lapply(validated_rows, function(tibble) {
   return(tibble)
 })
 
-unique(unvalidated_rows$P5$frequency_breakfast_weekend)
-
 
 
 ### 4 - For P5 & P6 the question frequency_feeling_lonely
 
 # Replace "Often" with "Often or always"
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(frequency_feeling_lonely = 
+                                 ifelse(frequency_feeling_lonely == "Often", "Often or always", frequency_feeling_lonely)))
+
 # Replace "Some of the time" with "Sometimes"
-
-
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(frequency_feeling_lonely = 
+                                 ifelse(frequency_feeling_lonely == "Some of the time", "Sometimes", frequency_feeling_lonely)))
 
 
 

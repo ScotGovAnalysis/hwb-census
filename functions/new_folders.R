@@ -1,7 +1,7 @@
 
 # Create new folders in raw_data directory
 
-new_folders <- function(year, la) {
+new_folders <- function(year, la, raw_data_folder) {
   
   dir <- paste0(
     raw_data_folder, 

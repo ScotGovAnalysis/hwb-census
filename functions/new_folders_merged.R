@@ -1,13 +1,9 @@
 
 # Create new folders in raw_data directory for merged datasets
 
-new_folders_merged <- function(year) {
+new_folders_merged <- function(year, raw_data_folder) {
   
-  dir_merged <- paste0(
-    "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey",
-    "/R/RAP Project/raw_data/", 
-    year, "/Merged"
-  )
+  dir_merged <- paste0(raw_data_folder, year, "/Merged")
   
   if(!dir.exists(dir_merged)) dir.create(dir_merged)
   

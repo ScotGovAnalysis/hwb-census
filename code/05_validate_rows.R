@@ -68,7 +68,7 @@ act_rows <- lapply(act_rows, remove_columns)
 
 
 
-### 3 - Replace all "-" values in act_rows with "NA"
+### 3 - Replace all "-" values in act_rows with "NA" ----
 
 # Function to replace "-" with "NA" in a tibble
 replace_dash_with_na <- function(tib) {
@@ -144,7 +144,7 @@ list_of_dataframes <- lapply(unexp_rows_filtered, list_to_dataframe)
 
 
 
-### 5 - Save row validation summary to output folder
+### 5 - Save row validation summary to output folder ----
 
 # Save excel file to output folder
 write_xlsx(

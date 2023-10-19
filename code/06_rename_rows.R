@@ -1,5 +1,5 @@
 #########################################################################
-# Name of file - 06_rename_rows.R
+# Name of file - 06_check_validate_rows.R
 # Health and Wellbeing (HWB) Census 
 #
 # Type - Reproducible Analytical Pipeline (RAP)
@@ -34,7 +34,7 @@ unvalidated_rows <- set_names(
 
 
 
-### 2 - Replace all "-"s with "NA"s
+### 2 - Replace all "-"s with "NA"s ----
 
 validated_rows <- lapply(unvalidated_rows, function(tibble) {
   tibble[tibble == "-"] <- NA
@@ -43,7 +43,7 @@ validated_rows <- lapply(unvalidated_rows, function(tibble) {
 
 
 
-### 3 - Replace responses which occur in multiple questions for multiple stages
+### 3 - Replace responses which occur in multiple questions for multiple stages ----
 
 # Replace "Neither agree not disagree" with "Neither agree nor disagree" in every tibble
 validated_rows <- lapply(validated_rows, function(tibble) {
@@ -77,7 +77,16 @@ validated_rows <- lapply(validated_rows, function(tibble) {
 
 
 
-### 4 - For P5 & P6 the question frequency_feeling_lonely
+### 4 - For P3 the question frequency_physical_activity ----
+
+# Replace "At least once a month but not every week" with "Once a month"
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
+                           mutate(frequency_physical_activity = 
+                                    ifelse(frequency_physical_activity == "At least once a month but not every week", "Once a month", frequency_physical_activity)))
+
+
+
+### 5 - For P5 & P6 the question frequency_feeling_lonely ----
 
 # Replace "Often" with "Often or always"
 validated_rows <- map(validated_rows, ~ .x %>% 
@@ -91,7 +100,7 @@ validated_rows <- map(validated_rows, ~ .x %>%
 
 
 
-### 5 - For S4-S6 replace "Doesn't apply to me" with NA for the following questions
+### 6 - For S4-S6 replace "Doesn't apply to me" with NA for the following questions ----
 # sex_boyfriend_girlfriend_feel_safe
 # sex_boyfriend_girlfriend_encourages
 # sex_boyfriend_girlfriend_checks
@@ -114,7 +123,7 @@ validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5"
 
 
 
-### 6 - For S4-S6 replace responses to sex_experience_type
+### 7 - For S4-S6 replace responses to sex_experience_type ----
 
 # Replace "Sexual intercourse" with "Vaginal or anal sex"
 validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
@@ -134,23 +143,12 @@ validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5"
 
 
 
+### 8 - Save as excel file to Merged folder ----
+
+write_xlsx(
+  validated_rows,
+  file.path(raw_data_folder, year, "Merged", paste0("05_validated_rows.xlsx"))
+)
 
 
-
-unique(unvalidated_rows$S6$frequency_breakfast_weekend)
-
-## P7-S6 frequency physical activity "At least once a week but not every day" does not match any available response options
-## closest response options are "4 to 6 times a week" or "2 to 3 times a day"
-
-## S1-S6 time_bed "At midnight or later" does not match any available response options
-## Closest response options are "At midnight or later, but before 1.00 am" or "At 1.00 am or later, but before 2.00 am"
-
-## S1-S6 adults_listening & adults_taking_into_account "Neither agree nor disagree" does not match any available response options
-## All response options are "Agree", "Disagree", "Don't know"
-## NOT AN ISSUE, it's getting flagged because there are differences in response options for p5-p7 and s1-s6
-
-## S1-S6 time_social_media_weekdays & time_social_media_weekends "Some time (up to 2 hours a day)" and "Quite a bit of time (about 3 hours a day or more)" do not match
-## All response options are "None at all", "About half an hour", "About 1 hour a day", "About 2 hours a day", "About 3 hours a day", "About 4 hours a day", "About 5 hours a day", "About 6 hours a day", "About 7 hours or more a day"
-## NOT AN ISSUE, it's getting flagged because there are differences in response options for p5-p7 and s1-s6
-
-## Frequency breakfast weekend is getting flagged too and idk why
+### END OF SCRIPT ###

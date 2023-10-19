@@ -30,6 +30,10 @@ exp_rows <-
     ))
   ) 
 
+# Replace all non-breaking spaces (NBSP with regular spaces)
+exp_rows <- map(exp_rows, ~ .x %>% 
+                  mutate_all(~ gsub("\u00A0", " ", .)))
+
 
 
 ### 2 - Read in data ----
@@ -47,6 +51,10 @@ act_rows <- set_names(
   ),
   all_stages
 )
+
+# Replace all non-breaking spaces (NBSP with regular spaces)
+act_rows <- map(act_rows, ~ .x %>% 
+                  mutate_all(~ gsub("\u00A0", " ", .)))
 
 
 # Remove columns "scn" and "school_name"

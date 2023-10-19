@@ -36,13 +36,18 @@ exp_rows <-
 
 # Read in merged data for each stage and store as a list of data frames
 
-act_rows <- 
+# Define the path to your Excel file and the sheet names
+file_path <- file.path(raw_data_folder, year, "Merged", "04_merged_data.xlsx")
+
+# Read in all sheets into a list of tibbles with names
+act_rows <- set_names(
   map(
-    set_names(all_stages), 
-    ~ read_xlsx(
-      file.path(raw_data_folder, year, "Merged", paste0("04_merged_data.xlsx"))),
-          sheet = .x
-  )
+    all_stages,
+    ~ read_xlsx(file_path, sheet = .x)
+  ),
+  all_stages
+)
+
 
 # Remove columns "scn" and "school_name"
 # Define a function to remove columns from a tibble

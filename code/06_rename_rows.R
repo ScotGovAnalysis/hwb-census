@@ -57,9 +57,9 @@ validated_rows <- lapply(validated_rows, function(tibble) {
   return(tibble)
 })
 
-# Replace "Don't Know" with "Don't know" in every tibble
+# Replace "Don't Know" with "Don’t know" in every tibble (different apostrophe and capitalised "K")
 validated_rows <- lapply(validated_rows, function(tibble) {
-  tibble[tibble == "Don't Know"] <- "Don't know"
+  tibble[tibble == "Don’t Know"] <- "Don't know"
   return(tibble)
 })
 
@@ -80,23 +80,28 @@ validated_rows <- lapply(validated_rows, function(tibble) {
 ### 4 - For P3 the question frequency_physical_activity ----
 
 # Replace "At least once a month but not every week" with "Once a month"
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S3"), ~ .x %>%
                            mutate(frequency_physical_activity = 
                                     ifelse(frequency_physical_activity == "At least once a month but not every week", "Once a month", frequency_physical_activity)))
 
 
 
-### 5 - For P5 & P6 the question frequency_feeling_lonely ----
+### 5 - For the question frequency_feeling_lonely ----
 
-# Replace "Often" with "Often or always"
-validated_rows <- map(validated_rows, ~ .x %>% 
-                        mutate(frequency_feeling_lonely = 
-                                 ifelse(frequency_feeling_lonely == "Often", "Often or always", frequency_feeling_lonely)))
+# Replace "Often" with "Often or always" for P5 & P6
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P5", "P6"), ~ .x %>%
+                           mutate(frequency_feeling_lonely = 
+                                    ifelse(frequency_feeling_lonely == "Often", "Often or always", frequency_feeling_lonely)))
 
-# Replace "Some of the time" with "Sometimes"
-validated_rows <- map(validated_rows, ~ .x %>% 
-                        mutate(frequency_feeling_lonely = 
-                                 ifelse(frequency_feeling_lonely == "Some of the time", "Sometimes", frequency_feeling_lonely)))
+# Replace "Some of the time" with "Sometimes" for P5 & P6
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P5", "P6"), ~ .x %>%
+                           mutate(frequency_feeling_lonely = 
+                                    ifelse(frequency_feeling_lonely == "Some of the time", "Sometimes", frequency_feeling_lonely)))
+
+# Replace "Sometimes" with "Some of the time" for P7
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P7"), ~ .x %>%
+                           mutate(frequency_feeling_lonely = 
+                                    ifelse(frequency_feeling_lonely == "Sometimes", "Some of the time", frequency_feeling_lonely)))
 
 
 
@@ -135,10 +140,16 @@ validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5"
                            mutate(sex_experience_type = 
                                     ifelse(sex_experience_type == "Penetrative sex", "Vaginal or anal sex", sex_experience_type)))
 
-# Replace "Penetrative sex" with "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)"
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
+# Replace "More intimate experiences (not sexual intercourse)" with "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)"
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S6"), ~ .x %>%
                            mutate(sex_experience_type = 
                                     ifelse(sex_experience_type == "More intimate experiences (not sexual intercourse)", 
+                                           "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)", sex_experience_type)))
+
+# Replace "More intimate experience (not sexual intercourse)" with "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)"
+validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S5"), ~ .x %>%
+                           mutate(sex_experience_type = 
+                                    ifelse(sex_experience_type == "More intimate experience (not sexual intercourse)", 
                                            "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)", sex_experience_type)))
 
 

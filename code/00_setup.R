@@ -72,7 +72,7 @@ for (la in all_las){
 
 ### 7 - Run new_folders_merged function to create new folder for merged data
 
-new_folders_merged(year)
+new_folders_merged(year, raw_data_folder)
 
 
 

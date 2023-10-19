@@ -32,6 +32,7 @@ library(purrr)
 source(here("functions", "check_headers.R"))
 source(here("functions", "clean_strings.R"))
 source(here("functions", "new_folders.R"))
+source(here("functions", "new_folders_merged.R"))
 
 
 ### 3 - Set file path for raw data ----
@@ -68,6 +69,10 @@ for (la in all_las){
   new_folders(year, la)
 }
 
+
+### 7 - Run new_folders_merged function to create new folder for merged data
+
+new_folders_merged(year, raw_data_folder)
 
 
 

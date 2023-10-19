@@ -47,6 +47,8 @@ validated_rows <- lapply(validated_rows, function(tibble) {
   return(tibble)
 })
 
+# Replace "Prefer Not to Say" with "Prefer not to say" in every tibble
+
 
 
 ### 4 - For P5 & P6 the question frequency_feeling_lonely
@@ -60,6 +62,58 @@ validated_rows <- map(validated_rows, ~ .x %>%
 validated_rows <- map(validated_rows, ~ .x %>% 
                         mutate(frequency_feeling_lonely = 
                                  ifelse(frequency_feeling_lonely == "Some of the time", "Sometimes", frequency_feeling_lonely)))
+
+
+
+### 5 - For S4-S6 replace "Doesn't apply to me" with NA for the following questions
+# sex_boyfriend_girlfriend_feel_safe
+# sex_boyfriend_girlfriend_encourages
+# sex_boyfriend_girlfriend_checks
+# sex_boyfriend_girlfriend_pressures_sexual
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_boyfriend_girlfriend_feel_safe = 
+                                 ifelse(sex_boyfriend_girlfriend_feel_safe == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_feel_safe)))
+
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_boyfriend_girlfriend_encourages = 
+                                 ifelse(sex_boyfriend_girlfriend_encourages == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_encourages)))
+
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_boyfriend_girlfriend_checks = 
+                                 ifelse(sex_boyfriend_girlfriend_checks == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_checks)))
+
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_boyfriend_girlfriend_pressures_sexual = 
+                                 ifelse(sex_boyfriend_girlfriend_pressures_sexual == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_pressures_sexual)))
+
+unique(unvalidated_rows$S4$sex_first_time_age)
+
+### 6 - For S4-S6 replace responses to sex_experience_type
+
+# Replace "Sexual intercourse" with "Vaginal or anal sex"
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_experience_type = 
+                                 ifelse(sex_experience_type == "Sexual intercourse", "Vaginal or anal sex", sex_experience_type)))
+
+# Replace "Penetrative sex" with "Vaginal or anal sex"
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_experience_type = 
+                                 ifelse(sex_experience_type == "Penetrative sex", "Vaginal or anal sex", sex_experience_type)))
+
+# Replace "Penetrative sex" with "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)"
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_experience_type = 
+                                 ifelse(sex_experience_type == "More intimate experiences (not sexual intercourse)", 
+                                        "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)", sex_experience_type)))
+
+
+
+### 6 - For S4-S6 replace responses to other sex questions
+
+# Replace "Don’t Know" with "Don’t know" for sex_last_time_condom_use
+validated_rows <- map(validated_rows, ~ .x %>% 
+                        mutate(sex_last_time_condom_use = 
+                                 ifelse(sex_last_time_condom_use == "Don’t Know", "Don’t know", sex_last_time_condom_use)))
 
 
 

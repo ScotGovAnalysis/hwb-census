@@ -1,11 +1,10 @@
 
 # Create new folders in raw_data directory
 
-new_folders <- function(year, la) {
+new_folders <- function(year, la, raw_data_folder) {
   
   dir <- paste0(
-    "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey",
-    "/R/RAP Project/raw_data/", 
+    raw_data_folder,
     year, "/", la
   )
   

@@ -44,13 +44,11 @@ exp_rows <- map(exp_rows, ~ .x %>%
 file_path <- file.path(raw_data_folder, year, "Merged", "04_merged_data.xlsx")
 
 # Read in all sheets into a list of tibbles with names
-act_rows <- set_names(
+act_rows <- 
   map(
     all_stages,
     ~ read_xlsx(file_path, sheet = .x)
-  ),
-  all_stages
-)
+  )
 
 # Replace all non-breaking spaces (NBSP with regular spaces)
 act_rows <- map(act_rows, ~ .x %>% 

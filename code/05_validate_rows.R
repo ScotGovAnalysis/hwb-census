@@ -70,7 +70,7 @@ act_rows <- lapply(act_rows, remove_columns)
 
 # Function to replace "-" with "NA" in a tibble
 replace_dash_with_na <- function(tib) {
-  tib %>% mutate_all(~ ifelse(. == "-", "NA", .))
+  tib %>% mutate_all(~ ifelse(. == "-", NA, .))
 }
 
 # Use map to apply the function to each tibble in the list

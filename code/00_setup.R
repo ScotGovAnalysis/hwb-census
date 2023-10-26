@@ -37,7 +37,7 @@ source(here("functions", "new_folders_merged.R"))
 
 ### 3 - Set file path for raw data ----
 
-raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
+raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data/"
 
 
 ### 4 - Set parameters ----
@@ -66,7 +66,7 @@ use_directory(paste0("output/", year))
 ### 6 - Run new_folders function to create new folders for each LA
 
 for (la in all_las){
-  new_folders(year, la)
+  new_folders(year, la, raw_data_folder)
 }
 
 

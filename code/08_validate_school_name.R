@@ -50,77 +50,34 @@ modified_data <- lapply(raw_data, function(tibble) {
 
 ### 3 - Restricts column school_name to school name only ----
 
-# Removes everything after the occurrence of the string "School"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- sub("School.*", "School", tibble$school_name)
-  return(tibble)
-})
+# Write function to find the last term in school_terms in school_name, remove everything after that
+# E.g. "Red Primary School - City - 55" will get renamed "Red Primary School"
+# E.g. "Yellow PS, Edinburgh" will get renamed "Yellow PS"
+# This coding approach was chosen because there are many formats school_name can take (any many more different formats may be 
+# added next year). The school_terms list is currently an exhaustive list of all the terms that a school name currently takes.
+# This WILL need to be reviewed each year.
 
-# Removes everything after the occurrence of the string "(Primary)", only if the string does not contain "School"
-modified_data <- lapply(modified_data, function(df) {
-  df$school_name <- ifelse(grepl("School", df$school_name), df$school_name, sub("\\(Primary\\).*", "(Primary)", df$school_name))
-  return(df)
-})
+school_terms <- c("School", "Primary", "(Primary)", "PS", "Secondary", "(Secondary)", "High", "Academy", "College",
+                  "Centre", "Grammar", "Service")
 
-# Removes everything after the occurrence of the string "(Secondary)", only if the string does not contain "School"
-modified_data <- lapply(modified_data, function(df) {
-  df$school_name <- ifelse(grepl("School", df$school_name), df$school_name, sub("\\(Secondary\\).*", "(Secondary)", df$school_name))
-  return(df)
-})
+# Function to modify the school_name column
+modify_school_name <- function(data, school_terms) {
+  # Use the str_replace function to modify each 'school_name' in the data
+  
+  # The following regular expression captures three parts:
+  # 1. (.*) - Captures everything before the last matching school term.
+  # 2. (paste(school_terms, collapse = "|")) - Forms a pattern of all school terms for matching.
+  # 3. .* - Captures everything after the last matching school term.
+  
+  # In the replacement argument:
+  # "\\1" refers to the first capture group (everything before the last matching school term).
+  # "\\2" refers to the second capture group (the last matching school term).
+  data$school_name <- str_replace(data$school_name, paste0("(.*)(", paste(school_terms, collapse = "|"), ").*"), "\\1\\2")
+  return(data)
+}
 
-# Removes everything after the occurrence of the string "Primary", only if the string does not contain "School"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School", tibble$school_name), tibble$school_name, sub("Primary.*", "Primary", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "PS", only if the string does not contain "School" and "Primary"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary", tibble$school_name), tibble$school_name, sub("PS.*", "PS", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "Secondary", only if the string does not contain "School" and "Primary" and "PS"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS", tibble$school_name), tibble$school_name, sub("Secondary.*", "Secondary", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "High", only if the string does not contain "School" and "Primary" and "PS" and "Secondary"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS|Secondary", tibble$school_name), tibble$school_name, sub("High.*", "High", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "Academy", only if the string does not contain "School" and "Primary" and "PS" and "Secondary" and "High"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS|Secondary|High", tibble$school_name), tibble$school_name, sub("Academy.*", "Academy", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "College", only if the string does not contain "School" and "Primary" and "PS" and "Secondary" and "High" and "Academy"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS|Secondary|High|Academy", tibble$school_name), tibble$school_name, sub("College.*", "College", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "Centre", only if the string does not contain "School" and "Primary" and "PS" and "Secondary" and "High" and "Academy" and "College"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS|Secondary|High|Academy|College", tibble$school_name), tibble$school_name, sub("Centre.*", "Centre", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "Grammar", only if the string does not contain "School" and "Primary" and "PS" and "Secondary" and "High" and "Academy" and "College" and "Centre"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS|Secondary|High|Academy|College|Centre", tibble$school_name), tibble$school_name, sub("Grammar.*", "Grammar", tibble$school_name))
-  return(tibble)
-})
-
-# Removes everything after the occurrence of the string "Service", only if the string does not contain "School" and "Primary" and "PS" and "Secondary" and "High" and "Academy" and "College" and "Centre" and "Grammar"
-modified_data <- lapply(modified_data, function(tibble) {
-  tibble$school_name <- ifelse(grepl("School|Primary|PS|Secondary|High|Academy|College|Centre|Grammar", tibble$school_name), tibble$school_name, sub("Service.*", "Service", tibble$school_name))
-  return(tibble)
-})
+# Modify the school_name column for each tibble in the list
+modified_data <- lapply(modified_data, modify_school_name, school_terms)
 
 
 
@@ -176,13 +133,6 @@ write_xlsx(
 
 
 ### END OF SCRIPT ###
-
-
-
-
-
-
-
 
 
 

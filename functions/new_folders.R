@@ -4,11 +4,9 @@
 new_folders <- function(year, la, raw_data_folder) {
   
   dir <- paste0(
-<<<<<<< HEAD
-    raw_data_folder,
-=======
+
     raw_data_folder, "/",
->>>>>>> main
+
     year, "/", la
   )
   

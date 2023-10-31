@@ -46,33 +46,21 @@ validated_rows <- lapply(unvalidated_rows, function(tibble) {
 ### 3 - Replace responses which occur in multiple questions for multiple stages ----
 
 # Replace "Neither agree not disagree" with "Neither agree nor disagree" in every tibble
-validated_rows <- lapply(validated_rows, function(tibble) {
-  tibble[tibble == "Neither agree not disagree"] <- "Neither agree nor disagree"
-  return(tibble)
-})
-
 # Replace "Prefer Not to Say" with "Prefer not to say" in every tibble
-validated_rows <- lapply(validated_rows, function(tibble) {
-  tibble[tibble == "Prefer Not to Say"] <- "Prefer not to say"
-  return(tibble)
-})
-
 # Replace "Don't Know" with "Don’t know" in every tibble (different apostrophe and capitalised "K")
-validated_rows <- lapply(validated_rows, function(tibble) {
-  tibble[tibble == "Don’t Know"] <- "Don't know"
-  return(tibble)
-})
-
 # Replace "Don’t know" with "Don't know" in every tibble (different apostrophes)
-validated_rows <- lapply(validated_rows, function(tibble) {
-  tibble[tibble == "Don’t know"] <- "Don't know"
-  return(tibble)
-})
-
 # Replace "Doesn’t apply to me" with "Doesn't apply to me" in every tibble (different apostrophes)
+
+replacements <- c(
+  "Neither agree not disagree" = "Neither agree nor disagree",
+  "Prefer Not to Say" = "Prefer not to say",
+  "Don’t Know" = "Don't know",
+  "Don’t know" = "Don't know",
+  "Doesn’t apply to me" = "Doesn't apply to me"
+)
+
 validated_rows <- lapply(validated_rows, function(tibble) {
-  tibble[tibble == "Doesn’t apply to me"] <- "Doesn't apply to me"
-  return(tibble)
+  tibble %>% mutate_all(recode, !!!replacements)
 })
 
 
@@ -80,13 +68,13 @@ validated_rows <- lapply(validated_rows, function(tibble) {
 ### 4 - For P3 the question frequency_physical_activity ----
 
 # Replace "At least once a month but not every week" with "Once a month"
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S3"), ~ .x %>%
-                           mutate(frequency_physical_activity = 
-                                    ifelse(frequency_physical_activity == "At least once a month but not every week", "Once a month", frequency_physical_activity)))
+validated_rows$S3 <- validated_rows$S3 %>%
+  mutate(frequency_physical_activity = 
+           ifelse(frequency_physical_activity == "At least once a month but not every week", "Once a month", frequency_physical_activity))
 
 
 
-### 5 - For the question frequency_feeling_lonely ----
+### 5 - For P5, P6, P7 the question frequency_feeling_lonely ----
 
 # Replace "Often" with "Often or always" for P5 & P6
 validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P5", "P6"), ~ .x %>%
@@ -99,9 +87,9 @@ validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P5", "P6"
                                     ifelse(frequency_feeling_lonely == "Some of the time", "Sometimes", frequency_feeling_lonely)))
 
 # Replace "Sometimes" with "Some of the time" for P7
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P7"), ~ .x %>%
-                           mutate(frequency_feeling_lonely = 
-                                    ifelse(frequency_feeling_lonely == "Sometimes", "Some of the time", frequency_feeling_lonely)))
+validated_rows$P7 <- validated_rows$P7 %>%
+  mutate(frequency_feeling_lonely = 
+           ifelse(frequency_feeling_lonely == "Sometimes", "Some of the time", frequency_feeling_lonely))
 
 
 
@@ -110,22 +98,15 @@ validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P7"), ~ .
 # sex_boyfriend_girlfriend_encourages
 # sex_boyfriend_girlfriend_checks
 # sex_boyfriend_girlfriend_pressures_sexual
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
-                           mutate(sex_boyfriend_girlfriend_feel_safe = 
-                                    ifelse(sex_boyfriend_girlfriend_feel_safe == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_feel_safe)))
-
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
-                           mutate(sex_boyfriend_girlfriend_encourages = 
-                                    ifelse(sex_boyfriend_girlfriend_encourages == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_encourages)))
-
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
-                           mutate(sex_boyfriend_girlfriend_checks = 
-                                    ifelse(sex_boyfriend_girlfriend_checks == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_checks)))
-
-validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
-                           mutate(sex_boyfriend_girlfriend_pressures_sexual = 
-                                    ifelse(sex_boyfriend_girlfriend_pressures_sexual == "Doesn't apply to me", NA, sex_boyfriend_girlfriend_pressures_sexual)))
-
+validated_rows <- 
+  map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
+           mutate(across(
+             c(sex_boyfriend_girlfriend_feel_safe, 
+               sex_boyfriend_girlfriend_encourages, 
+               sex_boyfriend_girlfriend_checks,
+               sex_boyfriend_girlfriend_pressures_sexual),
+             ~ ifelse(. == "Doesn't apply to me", NA, .)))
+  )
 
 
 ### 7 - For S4-S6 replace responses to sex_experience_type ----

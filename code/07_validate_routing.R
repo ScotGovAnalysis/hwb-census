@@ -67,7 +67,7 @@ for (stage in all_stages) {
       # Evaluate the R expression and return a logical vector
       # If the expression is TRUE, set the column value to NA
       # Otherwise, keep the original column value
-      mutate(!!col_name := ifelse(eval(parse(text = expr_string), envir = raw_data), NA, !!col_name))
+      mutate(!!col_name := ifelse(eval(parse(text = expr_string)), NA, !!col_name))
   }
 }
 

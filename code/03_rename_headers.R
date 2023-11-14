@@ -6,7 +6,7 @@
 # Written/run on - RStudio Desktop
 # Version of R - 4.2.2
 #
-# Description - Renames headers of sumbitted data files, after headers have been validated
+# Description - Renames headers of submitted data files, after headers have been validated
 #########################################################################
 
 

@@ -6,7 +6,7 @@
 # Written/run on - RStudio Desktop
 # Version of R - 4.2.2
 #
-# Description - Validates headers of sumbitted data files and creates an
+# Description - Validates headers of submitted data files and creates an
 # excel file summarising issues by Local Authority and Stage
 #########################################################################
 

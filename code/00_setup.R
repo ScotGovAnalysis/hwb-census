@@ -25,6 +25,7 @@ library(janitor)
 library(cli)
 library(usethis)
 library(purrr)
+library(DBI)
 
 
 ### 2 - Load functions (from functions folder) ----
@@ -56,6 +57,8 @@ all_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
 # Define expected pattern for question numbers in header
 # Accepted patterns: Q1. Q1.1. Q11.1 Q1.11 Q11.11
 q_pattern <- "Q\\d{1,2}\\.(\\d{1,2}\\.)?"
+
+pupil_census_year <- 2021
 
 
 ### 5 - Create output folder ----

@@ -86,14 +86,14 @@ modified_data <- lapply(modified_data, modify_school_name, school_terms)
 # Replace invalid SCNs with "Invalid value". 
 # Any value which isn't a 9 digit number or "Data not collected" will get replaced with "Invalid value".
 
-# Function to modify the scn column
-modify_scn_column <- function(tibble) {
-  tibble %>%
-    mutate(scn = ifelse(grepl("^\\d{9}$", scn) | scn == "Data not collected", scn, "Invalid value"))
-}
-
-# Modify the scn column in each tibble in the list
-modified_data <- lapply(modified_data, modify_scn_column)
+# # Function to modify the scn column
+# modify_scn_column <- function(tibble) {
+#   tibble %>%
+#     mutate(scn = ifelse(grepl("^\\d{9}$", scn) | scn == "Data not collected", scn, "Invalid value"))
+# }
+# 
+# # Modify the scn column in each tibble in the list
+# modified_data <- lapply(modified_data, modify_scn_column)
 
 
 

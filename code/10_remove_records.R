@@ -75,11 +75,11 @@ modified_data <- lapply(modified_data, function(tibble) {
 })
 
 # Remove leading 0's in hwb_scn. This is because pupil_census does this so we need to be able to match hwb scn's to pupil census scn's
-modified_data <- lapply(modified_data, function(df) {
-  df %>%
-    mutate(hwb_scn = ifelse(nchar(hwb_scn) == 9 & grepl("^0", hwb_scn),
-                            as.character(as.numeric(hwb_scn)), hwb_scn))
-})
+# modified_data <- lapply(modified_data, function(df) {
+#   df %>%
+#     mutate(hwb_scn = ifelse(nchar(hwb_scn) == 9 & grepl("^0", hwb_scn),
+#                             as.character(as.numeric(hwb_scn)), hwb_scn))
+# })
 
 test <- modified_data$S3 %>%
   filter(hwb_scn == "90596373")
@@ -128,7 +128,8 @@ test <- joined_data$S3 %>%
 test2 <- raw_data$S4 %>%
   filter(scn == "90596306")
 
-
+modified_data_not_er <- modified_data$P5 %>%
+  filter(hwb_la != "East Renfrewshire")
 
 
 ### 6 - Re-organise tibbles by pc_stage  --- 
@@ -153,7 +154,8 @@ final_data_combined <- final_data %>%
   group_split(pc_stage)  # Split tibbles into a list by 'name'
 
 
-# Create a unique list of tibble names
+# Create a unique list of tibble names, 15.11 this should be a unique list of values in pc_stage column of every tibble in joined data!
+# Missing records else
 tibble_names <- unique(names(final_data))
 
 # Initialize an empty list to store the combined tibbles
@@ -169,6 +171,7 @@ for (name in tibble_names) {
 # Re-order tibbles in final_data_combined to alphabetical (so it goes like P5, P6, P7, S1, S2,... rather than P5, P6, P7, S3, ...)
 final_data_combined <- final_data_combined[order(names(final_data_combined))]
 
+unique(joined_data$P5$pc_stage)
 
 # Remove any columns after pc_stage
 # This is because re-arranging the tibbles by pc_stage will have created some extra columns for pupils that did the wrong stage survey
@@ -360,7 +363,7 @@ removed_records <- mapply(update_tibble, removed_records, duplicate_scns_within_
 # Define a function to filter tibbles within the list
 filter_invalid_scns <- function(tibble) {
   tibble %>%
-    filter(hwb_scn != "Data not collected" & !grepl("^\\d{9}$", hwb_scn))
+    filter(hwb_scn != "Data not collected" & !grepl("^\\d{8,9}$", hwb_scn))
 }
 
 # Use lapply to apply the filter_tibble function to each tibble in modified_data
@@ -407,7 +410,7 @@ for (i in seq_along(modified_data)) {
   tibble <- modified_data[[i]]
   
   # Filter rows with 9-digit numbers in hwb_scn that don't match pc_scn in pupil_census
-  filtered_tibble <- tibble[grepl("^[0-9]{9}$", tibble$hwb_scn) & !tibble$hwb_scn %in% pupil_census$pc_scn, ]
+  filtered_tibble <- tibble[grepl("^[0-9]{8,9}$", tibble$hwb_scn) & !tibble$hwb_scn %in% pupil_census$pc_scn, ]
   
   # Assign the filtered tibble to the corresponding name in the result list
   name <- names(modified_data)[i]

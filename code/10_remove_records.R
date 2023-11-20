@@ -7,7 +7,8 @@
 # Version of R - 4.2.2
 #
 # Description - This code removes records for pupils who answered the 
-# wrong stage questionnaire or who responded more than once
+# wrong stage questionnaire, or who responded more than once, or who cannot
+# be linked to the pupil census for analysis.
 #########################################################################
 
 
@@ -39,26 +40,19 @@ raw_data <- set_names(
 
 # Load and select required variables from latest pupil census table 
 myconn <- dbConnect(odbc::odbc(), "dbXed", UID="", PWD= "")
-pupil_census <- dbGetQuery(myconn, paste(paste0("SELECT ScottishCandidateNumberN,
-                                                LaCode,
-                                                StudentStage
-                                                FROM sch.student_", pupil_census_year),
-                                                "WHERE OnRoll = '1' AND
-                                                StudentStage IN ('P5', 'P6', 'P7',
-                                                'S1', 'S2', 'S3', 'S4', 'S5', 'S6') AND
-                                                SchoolFundingType IN ('2', '3')"))
 
-test <- pupil_census %>%
-  filter(ScottishCandidateNumberN == "90596373")
+# Construct the placeholders for the IN clause
+placeholders <- paste(rep("?", length(all_stages)), collapse = ",")
 
-# Get this working later
-pupil_census2 <- dbGetQuery(myconn, paste(paste0("SELECT ScottishCandidateNumberN,
-                                                LaCode,
-                                                StudentStage
-                                                FROM sch.student_", pupil_census_year),
-                                                "WHERE OnRoll = '1' AND
-                                                StudentStage IN ('", paste(all_stages, collapse = "','"), "') AND
-                                                SchoolFundingType IN ('2', '3')"))
+# Construct the SQL query with parameterized IN clause
+query <- glue::glue("SELECT ScottishCandidateNumberN, LaCode, StudentStage
+                     FROM sch.student_{pupil_census_year}
+                     WHERE OnRoll = '1' AND
+                     StudentStage IN ({placeholders}) AND
+                     SchoolFundingType IN ('2', '3')")
+
+# Execute the query using parameterized inputs
+pupil_census <- dbGetQuery(myconn, query, params = all_stages)
 
 
 
@@ -69,20 +63,10 @@ modified_data <- map2(raw_data, names(raw_data), ~ .x %>%
                    mutate(hwb_stage = .y) %>% 
                    relocate(hwb_stage, .before = 1))
 
-# Rename column "scn" to "hwb_scn" for ease of comparison
+# Rename column "scn" to "hwb_scn" for ease of comparison to the pupil census
 modified_data <- lapply(modified_data, function(tibble) {
     tibble <- dplyr::rename(tibble, hwb_scn = scn)
 })
-
-# Remove leading 0's in hwb_scn. This is because pupil_census does this so we need to be able to match hwb scn's to pupil census scn's
-# modified_data <- lapply(modified_data, function(df) {
-#   df %>%
-#     mutate(hwb_scn = ifelse(nchar(hwb_scn) == 9 & grepl("^0", hwb_scn),
-#                             as.character(as.numeric(hwb_scn)), hwb_scn))
-# })
-
-test <- modified_data$S3 %>%
-  filter(hwb_scn == "90596373")
 
 
 
@@ -90,7 +74,6 @@ test <- modified_data$S3 %>%
 
 # Apply lookup table to pupil_census to rename variables in column "LaCode"
 pupil_census$LaCode <- lut_la_code[pupil_census$LaCode]
-
 
 # Rename column "ScottishCandidateNumberN" to "pc_scn"
 # Rename column "LaCode" to "pc_la"
@@ -103,19 +86,24 @@ pupil_census <- pupil_census %>%
 # Convert column "pc_scn" from numeric to character
 pupil_census$pc_scn <- as.character(pupil_census$pc_scn)
 
-test <- pupil_census %>%
-  filter(pc_scn == "90596373")
+
 
 ### 5 - Join pupil_census on to modified_data ----
 
 # Define a function to left join pupil_census onto a tibble, only when hwb_scn is a 8 or 9 digit number (should be 9 digit number but 
-# pupil census removes 0s at the start)
+# pupil census leading 0s at the start)
+# Also need to match like 012345678 from hwb to 12345678 in pupil census
 left_join_census <- function(tibble) {
   
   tibble_filtered <- tibble %>%
-    filter(grepl("^[0-9]{8,9}$", hwb_scn))
+    filter(grepl("^[0-9]{8,9}$", hwb_scn)) %>%
+    mutate(hwb_scn_cleaned = as.numeric(hwb_scn)) # Temporary numeric version for join
   
-  result <- left_join(tibble_filtered, pupil_census, by = c("hwb_scn" = "pc_scn"))
+  pupil_census_cleaned <- pupil_census %>%
+    mutate(pc_scn_cleaned = as.numeric(pc_scn)) # Temporary numeric version for join
+  
+  result <- tibble_filtered %>%
+    left_join(pupil_census_cleaned, by = c("hwb_scn_cleaned" = "pc_scn_cleaned"))
   
   return(result)
 }
@@ -123,13 +111,12 @@ left_join_census <- function(tibble) {
 # Apply left_join_census function to each tibble in modified_data
 joined_data <- map(modified_data, left_join_census)
 
-test <- joined_data$S3 %>%
-  filter(hwb_scn == "90596373")
-test2 <- raw_data$S4 %>%
-  filter(scn == "90596306")
+# Replace NA values in pc_stage column with "No stage match" string in each tibble
+joined_data <- map(joined_data, ~ mutate(.x, pc_stage = ifelse(is.na(pc_stage), "No stage match", pc_stage)))
 
-modified_data_not_er <- modified_data$P5 %>%
-  filter(hwb_la != "East Renfrewshire")
+# Remove columns "hwb_scn_cleaned" and "pc_scn" from every tibble in joined_data
+joined_data <- map(joined_data, ~ .x %>% select(-c(hwb_scn_cleaned, pc_scn)))
+  
 
 
 ### 6 - Re-organise tibbles by pc_stage  --- 
@@ -148,12 +135,6 @@ for(tibble_df in joined_data) {
   final_data <- append(final_data, split_tibbles)
 }
 
-# Group tibbles by their 'name' column and combine them into one tibble each
-final_data_combined <- final_data %>%
-  bind_rows() %>%   # Combine all tibbles into one
-  group_split(pc_stage)  # Split tibbles into a list by 'name'
-
-
 # Create a unique list of tibble names, 15.11 this should be a unique list of values in pc_stage column of every tibble in joined data!
 # Missing records else
 tibble_names <- unique(names(final_data))
@@ -168,14 +149,8 @@ for (name in tibble_names) {
   final_data_combined[[name]] <- combined_tibble
 }
 
-# Re-order tibbles in final_data_combined to alphabetical (so it goes like P5, P6, P7, S1, S2,... rather than P5, P6, P7, S3, ...)
+# Re-order tibbles in final_data_combined to alphabetical (so it goes like P5, P6, P7, S1, S2,... rather than P5, P7, P6, S3, ...)
 final_data_combined <- final_data_combined[order(names(final_data_combined))]
-
-unique(joined_data$P5$pc_stage)
-
-# Remove any columns after pc_stage
-# This is because re-arranging the tibbles by pc_stage will have created some extra columns for pupils that did the wrong stage survey
-# All of these rows 
 
 
 
@@ -200,42 +175,33 @@ removed_records <- lapply(removed_records, add_reason_removed_column)
 
 
 
+# ### 8 - Create function to add rows to removed_records ---
 
-# ### 8 - Remove records which are exactly the same ---
-# 
-# # Create a list of tibbles called exact_same_rows
-# exact_same_rows <- lapply(final_data_combined, function(tibble) {
-#   # Find duplicate rows in the current tibble
-#   duplicates <- tibble[duplicated(tibble) | duplicated(tibble, fromLast = TRUE), ]
-#   return(duplicates)
-# })
-# 
-# # Remove duplicates
-# exact_same_rows <- lapply(exact_same_rows, function(tibble) {
-#   tibble %>%
-#     distinct()
-# })
-# 
-# Insert these rows into removed_records, with reason_removed = "Exactly the same as another record"
 # Function to update tibbles in removed_records
+# Only add rows from new_tibble to removed_records if that row does not currently exist in removed_records (i.e. stops a row getting added
+# more than once if it is being rejected for multiple reasons)
 update_tibble <- function(existing_tibble, new_tibble, explanation_reason_removed) {
   if (nrow(new_tibble) > 0) {
-    new_tibble <- new_tibble %>%
-      mutate(reason_removed = explanation_reason_removed)
-    combined_tibble <- bind_rows(existing_tibble, new_tibble)
+    new_rows <- anti_join(new_tibble, existing_tibble)
+    if (nrow(new_rows) > 0) {
+      new_rows <- new_rows %>%
+        mutate(reason_removed = explanation_reason_removed)
+      combined_tibble <- bind_rows(existing_tibble, new_rows)
+    } else {
+      combined_tibble <- existing_tibble
+    }
   } else {
     combined_tibble <- existing_tibble
   }
   return(combined_tibble)
 }
-# 
-# # Update the tibbles in removed_records with rows from exact_same_rows
-# removed_records <- mapply(update_tibble, removed_records, exact_same_rows, "Exactly the same as another record")
+
 
 
 ### 9 - Remove records where a pupil answered the wrong stage questionnaire ---
 
 # Create a list of tibbles called inconsistent_stages where hwb_stage != pc_stage
+
 # Create a function to filter each tibble in the final_data_combined list
 filter_inconsistent_stages <- function(tibble) {
   return(tibble %>% filter(hwb_stage != pc_stage))
@@ -265,12 +231,7 @@ filter_rows <- function(tibble) {
 inconsistent_stages <- lapply(inconsistent_stages, filter_rows)
 
 # Insert these rows into removed_records, with reason_removed = "Pupil completed different stage questionnaire"
-# Update the tibbles in removed_records with rows from inconsistent_stages
 removed_records <- mapply(update_tibble, removed_records, inconsistent_stages, "Pupil completed different stage questionnaire")
-
-test2 <- removed_records$S1 %>%
-  filter(hwb_scn == "150854091")
-
 
 
 
@@ -281,19 +242,14 @@ pc_la_didnt_take_part <- lapply(final_data_combined, function(tibble_data) {
   tibble_data %>% filter(!pc_la %in% all_las)
 })
 
-test2 <- pc_la_didnt_take_part$P5 %>%
-  filter(hwb_scn == "220075664")
-
-
 # Insert these rows into removed_records, with reason_removed = "Pupil census LA did not take part"
-# Update the tibbles in removed_records with rows from pc_la_didnt_take_part
 removed_records <- mapply(update_tibble, removed_records, pc_la_didnt_take_part, "Pupil census LA did not take part")
 
 
 
 ### 11 - Remove duplicate scns within each stage ---
 
-# Create an empty named list to store the results
+# Create an empty list to store the results
 duplicate_scns_within_stage <- vector("list", length(final_data_combined))
 names(duplicate_scns_within_stage) <- names(final_data_combined)
 
@@ -324,8 +280,6 @@ for (tibble_name in names(duplicate_scns_within_stage)) {
   # Assign the modified tibble back to the list
   duplicate_scns_within_stage[[tibble_name]] <- tibble
 }
-test <- duplicate_scns_within_stage$S1 %>%
-  filter(hwb_scn == "150854091")
 
 # Remove EXACTLY ONE record for each hwb_scn from duplicate_scns_within_stage (this is the record which will be retained for analysis)
 # Remove the record with the highest number in number_questions_answered
@@ -343,17 +297,31 @@ for (tibble_name in names(duplicate_scns_within_stage)) {
   tibble <- tibble %>%
     arrange(desc(number_questions_answered)) %>%  # Sort by number_questions_answered in descending order
     filter(duplicated(hwb_scn))
-#    distinct(hwb_scn, .keep_all = TRUE)  # Keep only the first row for each hwb_scn
   
   # Assign the modified tibble back to the list
   duplicate_scns_within_stage[[tibble_name]] <- tibble
 }
 
 # Insert these rows into removed_records, with reason_removed = "Pupil completed multiple questionnaires within stage"
-# Update the tibbles in removed_records with rows from duplicate_scns_within_stage
 removed_records <- mapply(update_tibble, removed_records, duplicate_scns_within_stage, "Pupil completed multiple questionnaires within stage")
 
-
+# Create a new tibble in modified_data for 'No stage match', copying the format of the P5 tibble
+if ("P5" %in% names(modified_data)) {
+  headers <- colnames(modified_data$P5)
+  
+  # Create an empty dataframe with the same headers
+  new_tibble <- data.frame(matrix(NA, nrow = 0, ncol = length(headers)))
+  colnames(new_tibble) <- headers
+  
+  # Insert this empty dataframe into modified_data list as the first element
+  modified_data <- c(list("No stage match" = new_tibble), modified_data)
+} else {
+  # If "P5" dataframe doesn't exist, create an empty dataframe with no headers
+  new_tibble <- data.frame()
+  
+  # Insert an empty dataframe as "No stage match" as the first element
+  modified_data <- c(list("No stage match" = new_tibble), modified_data)
+}
 
 
 
@@ -370,35 +338,13 @@ filter_invalid_scns <- function(tibble) {
 invalid_scns <- lapply(modified_data, filter_invalid_scns)
 
 # Insert these rows into removed_records, with reason_removed = "Invalid SCN"
-# Update the tibbles in removed_records with rows from invalid_scns
 removed_records <- mapply(update_tibble, removed_records, invalid_scns, "Invalid SCN")
 
 
 
-# 13 - Remove records with blank SCNs ---
-
-# Create an empty list to store the results
-blank_scns <- list()
-
-# Loop through each tibble in modified_data
-for (i in seq_along(modified_data)) {
-  # Filter rows where 'hwb_scn' is NA
-  filtered_tibble <- modified_data[[i]][is.na(modified_data[[i]]$hwb_scn), ]
-  
-  # Assign the filtered tibble to blank_scns with the same name
-  tbl_name <- names(modified_data)[i]
-  blank_scns[[tbl_name]] <- filtered_tibble
-}
-
-# Insert these rows into removed_records, with reason_removed = "Blank SCN"
-# Update the tibbles in removed_records with rows from blank_scns
-removed_records <- mapply(update_tibble, removed_records, blank_scns, "Blank SCN")
-
-
-
-# 14 - Remove records with no SCN match to the pupil census (excluding any LAs that did not collect SCN) ---
+### 13 - Remove records with no SCN match to the pupil census (excluding any LAs that did not collect SCN) ---
 # Create a list of tibbles called scns_without_pc_match (where the names of the tibbles are the same as the names of the tibbles 
-# in modified_data). The rows contained in scns_without_pc_match are the rows in modified_data that have a 9 digit number in the column 
+# in modified_data). The rows contained in scns_without_pc_match are the rows in modified_data that have a 8 or 9 digit number in the column 
 # hwb_scn, that doesn't contain a match in the pc_scn column of pupil_census.
 
 # Create an empty list to store the results
@@ -421,27 +367,21 @@ for (i in seq_along(modified_data)) {
 # Update the tibbles in removed_records with rows from scns_without_pc_match
 removed_records <- mapply(update_tibble, removed_records, scns_without_pc_match, "No SCN match in pupil census")
 
-test2 <- removed_records$S1 %>%
-  filter(hwb_scn == "150854091")
-
-
-# 15 - Remove duplicate rows in removed_records --- 
-
-# Is this the right approach??? SCN 150854091 in S1 completed four surveys,
-# two of which were the same and were removed, two individual ones (one of which was correct)
-# this approach changes 3 removed questionnaires to 2 (incorrect) so what will changing it do??
-
-# I guess not needed as it's only that record that's getting de-duplicated!
-
-# # Use the map function to remove duplicate rows in each tibble
-# removed_records_no_duplicates <- map(removed_records, ~distinct(.x))
-# 
-# test <- removed_records_no_duplicates$S1 %>%
-#   filter(hwb_scn == "150854091")
+# Remove rows from removed_records in P5-S6 where pc_stage is NA. This is because they appear twice, once in tibble 'No stage match'
+# and once in the stage tibble of their hwb_stage
+removed_records <- imap(removed_records, function(tbl, tbl_name) {
+  if (tbl_name %in% all_stages) {
+    filtered_tbl <- tbl %>%
+      filter(!is.na(pc_stage))
+    return(filtered_tbl)
+  } else {
+    return(tbl)
+  }
+})
 
 
 
-# 16 - Save removed_records as an excel file to Output folder --- 
+### 14 - Save removed_records as an excel file to Output folder --- 
 
 # Save excel file to output folder
 write_xlsx(
@@ -449,16 +389,57 @@ write_xlsx(
   here("output", year, paste0(year, "_records_removed.xlsx"))
 )
 
-test3 <- removed_records$S1 %>%
-  filter(hwb_scn == "150854091")
 
 
+### 15 - Remove records in removed_records from final_data_combined --- 
 
-# 17 - Remove records in removed_records from final_data_combined --- 
+# Remove pc_la and pc_stage columns from each tibble in joined_data
+joined_data2 <- lapply(joined_data, function(tib) {
+  tib %>% 
+    select(-pc_la, -pc_stage)
+})
 
-# Remove columns pc_la, pc_stage, reason_removed, number_questions_answered
-removed_records <- map(removed_records, 
-                                     ~ select(.x, -reason_removed, -number_questions_answered))
+# Insert blank tibble called 'No stage match' in joined_data2 to match the structure of modified_data
+# Get the headers/column names of the P5 tibble (assuming it exists)
+if ("P5" %in% names(joined_data2)) {
+  headers <- colnames(joined_data2$P5)
+  
+  # Create an empty tibble with the same headers
+  new_tibble <- tibble::tibble(!!!setNames(rep(list(NA), length(headers)), headers))
+  
+  # Insert this empty tibble into joined_data2 list as the first element
+  joined_data2 <- c(list("No stage match" = new_tibble), joined_data2)
+} else {
+  # If "P5" tibble doesn't exist, create an empty tibble with no headers
+  new_tibble <- tibble::tibble()
+  
+  # Insert an empty tibble as "No stage match" as the first element
+  joined_data2 <- c(list("No stage match" = new_tibble), joined_data2)
+}
+
+
+# Function to perform anti-join for each tibble name
+get_unjoined_data <- function(modified_tbl, joined_tbl) {
+  unjoined_tbl <- Map(function(mod_tbl, joined_tbl) {
+    anti_join(mod_tbl, joined_tbl)
+  }, modified_tbl, joined_tbl)
+  names(unjoined_tbl) <- names(modified_tbl)  # Preserve original tibble names
+  return(unjoined_tbl)
+}
+
+# Creating unjoined_data list of tibbles
+unjoined_data <- get_unjoined_data(modified_data, joined_data2)
+
+# Remove columns reason_removed, number_questions_answered
+removed_records <- lapply(removed_records, function(tbl) {
+  if ("reason_removed" %in% colnames(tbl)) {
+    tbl <- tbl %>% select(-reason_removed)
+  }
+  if ("number_questions_answered" %in% colnames(tbl)) {
+    tbl <- tbl %>% select(-number_questions_answered)
+  }
+  return(tbl)
+})
 
 hwb_scn <- "hwb_scn"
 
@@ -471,20 +452,6 @@ sort_tibble <- function(df) {
 # Sort both data frames
 sorted_final_data_combined <- lapply(final_data_combined, sort_tibble)
 sorted_removed_records <- lapply(removed_records, sort_tibble)
-
-# final_data_combined_filtered <- setNames(
-#   lapply(names(sorted_final_data_combined), function(name) {
-#     df <- sorted_final_data_combined[[name]]
-#     removed <- sorted_removed_records[[name]]
-#     
-#     result <- df %>%
-#       anti_join(removed, by = colnames(df))
-#     
-#     # Keep only the first occurrence of each unique row
-#     result[!duplicated(result), ]
-#   }),
-#   names(sorted_final_data_combined)
-# )
 
 final_data_combined_filtered <- setNames(
   lapply(names(sorted_final_data_combined), function(name) {
@@ -505,10 +472,6 @@ final_data_combined_filtered <- setNames(
   }),
   names(sorted_final_data_combined)
 )
-
-
-test <- final_data_combined_filtered$S1 %>%
-  filter(hwb_scn == "150854091")
 
 
 
@@ -541,8 +504,14 @@ final_data_combined_filtered <- lapply(final_data_combined_filtered, remove_dupl
 
 
 
-### 18 - Add East Renfrewshire records back in ---
+### 16 - Add East Renfrewshire records back in ---
+
+# Remove tibble 'No stage match' from final_data_combined_filtered
+final_data_combined_filtered <- final_data_combined_filtered[!names(final_data_combined_filtered) %in% 'No stage match']
+
 east_ren <- map(modified_data, ~filter(.x, hwb_la == "East Renfrewshire"))
+
+east_ren <- east_ren[!names(east_ren) %in% 'No stage match']
 
 # Add columns pc_la and pc_stage to east_ren
 # These will be the same as hwb_la and hwb_stage because East Renfrewshire didn't collect scn so we have no way of linking to the pupil census
@@ -553,21 +522,25 @@ combined_data <- Map(function(x, y) bind_rows(x, y), final_data_combined_filtere
 unique(combined_data$S4$pc_la)
 
 
-### 20 - Replace hwb_scn with "Data not collected" where pc_la = "East Renfrewshire" --- 
-# Define a function to replace values in hwb_scn column
-# replace_hwb_scn <- function(tibble) {
-#   tibble %>% 
-#     mutate(hwb_scn = ifelse(pc_la == "East Renfrewshire", "Data not collected", hwb_scn))
-# }
-# 
-# # Use lapply to apply the function to each tibble in the list
-# final_data_combined <- lapply(final_data_combined, replace_hwb_scn)
-#
-# Not sure if this needs doing - revisit
+
+### 17 - Replace hwb_scn with "Data not collected" where pc_la = "East Renfrewshire" --- 
+
+# This is because if a pupil completed the survey in a LA that wasn't East Renfrewshire, and then moved to East Renfrewshire, then
+# we want to include them as East Renfrewshire for the published analysis, but we don't publish any characteristic breakdowns for 
+# East Renfrewshire as they didn't collect SCN.
+
+# Define a function to replace values in hwb_scn column with "Data not collected" when the pupil census local authority is East Renfrewshire
+replace_hwb_scn <- function(tibble) {
+  tibble %>%
+    mutate(hwb_scn = ifelse(pc_la == "East Renfrewshire", "Data not collected", hwb_scn))
+}
+
+# Use lapply to apply the function to each tibble in the list
+final_data_combined <- lapply(final_data_combined, replace_hwb_scn)
 
 
 
-### 19 - Re-order columns to match what they originally were and remove blank columns
+### 18 - Re-order columns to match what they originally were and remove blank columns
 
 # Remove blank columns, these were introduced when re-organising tibbles from hwb_stage into pc_stage
 # Function to remove blank columns from a tibble
@@ -600,30 +573,20 @@ cleaned_combined_data_reordered <- reorder_columns(joined_data, cleaned_combined
 
 
 
-
-### 20 - Save final_data_combined_filtered as an excel file to Merged folder --- 
+### 19 - Save final_data_combined_filtered as an excel file to Merged folder --- 
 
 write_xlsx(
   cleaned_combined_data_reordered,
   file.path(raw_data_folder, year, "Merged", paste0("08_removed_records.xlsx"))
 )
 
-testt <- cleaned_combined_data_reordered$S4 %>%
-  filter(hwb_scn == "090596306")
-  
+
+
+### END OF SCRIPT ###
 
 
 
 
 
-
-# Accessing the S3 tibble
-s3_tibble <- cleaned_combined_data_reordered$S3
-
-# Finding duplicates in the column hwb_scn
-duplicates <- s3_tibble[duplicated(s3_tibble$hwb_scn) | duplicated(s3_tibble$hwb_scn, fromLast = TRUE), ]
-
-# Creating the dataframe test containing duplicates
-test <- as.data.frame(duplicates)
 
 

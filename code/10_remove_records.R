@@ -519,8 +519,6 @@ east_ren <- map(east_ren, ~mutate(.x, pc_la = hwb_la, pc_stage = hwb_stage))
 
 combined_data <- Map(function(x, y) bind_rows(x, y), final_data_combined_filtered, east_ren)
 
-unique(combined_data$S4$pc_la)
-
 
 
 ### 17 - Replace hwb_scn with "Data not collected" where pc_la = "East Renfrewshire" --- 

@@ -38,7 +38,7 @@ source(here("functions", "new_folders_merged.R"))
 
 ### 3 - Set file path for raw data ----
 
-raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
+raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data/"
 
 
 ### 4 - Set parameters ----

@@ -57,9 +57,8 @@ modified_data <- lapply(raw_data, function(tibble) {
 # added next year). The school_terms list is currently an exhaustive list of all the terms that a school name currently takes.
 # This WILL need to be reviewed each year.
 
-school_terms <- c("School", "Primary", "(Primary)", "PS", "Secondary", "(Secondary)", "High", "Academy", "College",
+school_terms <- c("School", "Primary", "PS", "Secondary", "High", "Academy", "College",
                   "Centre", "Grammar", "Service")
-
 # Function to modify the school_name column
 modify_school_name <- function(data, school_terms) {
   # Use the str_replace function to modify each 'school_name' in the data
@@ -72,7 +71,7 @@ modify_school_name <- function(data, school_terms) {
   # In the replacement argument:
   # "\\1" refers to the first capture group (everything before the last matching school term).
   # "\\2" refers to the second capture group (the last matching school term).
-  data$school_name <- str_replace(data$school_name, paste0("(.*)(", paste(school_terms, collapse = "|"), ").*"), "\\1\\2")
+  data$school_name <- str_replace(data$school_name, paste0("(.*)(\\(?(", paste(school_terms, collapse = "|"), ")\\/?).*"), "\\1\\2")
   return(data)
 }
 
@@ -81,23 +80,7 @@ modified_data <- lapply(modified_data, modify_school_name, school_terms)
 
 
 
-### 4 - Validate SCN ----
-
-# Replace invalid SCNs with "Invalid value". 
-# Any value which isn't a 9 digit number or "Data not collected" will get replaced with "Invalid value".
-
-# # Function to modify the scn column
-# modify_scn_column <- function(tibble) {
-#   tibble %>%
-#     mutate(scn = ifelse(grepl("^\\d{9}$", scn) | scn == "Data not collected", scn, "Invalid value"))
-# }
-# 
-# # Modify the scn column in each tibble in the list
-# modified_data <- lapply(modified_data, modify_scn_column)
-
-
-
-### 5 - Remove records where did not take part ----
+### 4 - Remove records where did not take part ----
 
 # Remove records where take_part != "Yes"
 modified_data <- lapply(modified_data, function(tibble) {
@@ -119,11 +102,11 @@ filter_rows <- function(tibble) {
 
 # Apply the filter function to each tibble in the list
 filtered_data <- modified_data %>%
-  map(~ filter_rows(.))
+  map(filter_rows)
 
 
 
-### 6 - Save as excel file to Merged folder ----
+### 5 - Save as excel file to Merged folder ----
 
 write_xlsx(
   filtered_data,

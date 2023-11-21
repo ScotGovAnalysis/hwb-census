@@ -247,7 +247,7 @@ removed_records <- mapply(update_tibble, removed_records, pc_la_didnt_take_part,
 
 
 
-### 11 - Remove duplicate scns within each stage ---
+### 11 - Remove duplicate SCNs within each stage ---
 
 # Create an empty list to store the results
 duplicate_scns_within_stage <- vector("list", length(final_data_combined))
@@ -473,8 +473,6 @@ final_data_combined_filtered <- setNames(
   names(sorted_final_data_combined)
 )
 
-
-
 # Check for duplicates in each tibble within the list
 for (i in seq_along(final_data_combined_filtered)) {
   tbl <- final_data_combined_filtered[[i]]
@@ -486,9 +484,9 @@ for (i in seq_along(final_data_combined_filtered)) {
   }
 }
 
-## scn 150854091 in S1 is a very odd case where they completed four records, two of which were identical. Those two identical records and
-## one other needed to be removed but the prior code isn't set up to handle that, but it's set up to handle the case where there were one
-## pupil completed the exact same response twice in S1, so they should appear once in removed_records and once in final_data_combined_filtered
+# There was an odd case where one pupil completed four records, two of which were identical. Those two identical records and one other
+# needed to be removed but the prior code isn't set up to handle that, but it's set up to handle the case where there were one pupil completed
+# the exact same response twice, so they should appear once in removed_records and once in final_data_combined_filtered.
 # Function to remove duplicates based on specified conditions
 remove_duplicates <- function(df) {
   df %>%
@@ -500,7 +498,6 @@ remove_duplicates <- function(df) {
 
 # Apply the function to each tibble in the list
 final_data_combined_filtered <- lapply(final_data_combined_filtered, remove_duplicates)
-
 
 
 

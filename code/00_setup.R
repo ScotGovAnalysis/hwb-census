@@ -25,6 +25,7 @@ library(janitor)
 library(cli)
 library(usethis)
 library(purrr)
+library(DBI)
 
 
 ### 2 - Load functions (from functions folder) ----
@@ -37,7 +38,7 @@ source(here("functions", "new_folders_merged.R"))
 
 ### 3 - Set file path for raw data ----
 
-raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data/"
+raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
 
 
 ### 4 - Set parameters ----
@@ -56,6 +57,11 @@ all_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
 # Define expected pattern for question numbers in header
 # Accepted patterns: Q1. Q1.1. Q11.1 Q1.11 Q11.11
 q_pattern <- "Q\\d{1,2}\\.(\\d{1,2}\\.)?"
+
+pupil_census_year <- 2021
+
+studentnaturesupport_year <- 2021
+
 
 
 ### 5 - Create output folder ----

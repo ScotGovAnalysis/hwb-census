@@ -28,17 +28,21 @@ library(purrr)
 library(DBI)
 
 
+
 ### 2 - Load functions (from functions folder) ----
 
 source(here("functions", "check_headers.R"))
 source(here("functions", "clean_strings.R"))
 source(here("functions", "new_folders.R"))
 source(here("functions", "new_folders_merged.R"))
+source(here("functions", "new_output_folders.R"))
 
 
-### 3 - Set file path for raw data ----
+### 3 - Set file path for raw data and output folders ----
 
 raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
+
+output_folder <- here("output")
 
 
 ### 4 - Set parameters ----
@@ -69,16 +73,28 @@ studentnaturesupport_year <- 2021
 use_directory(paste0("output/", year))
 
 
-### 6 - Run new_folders function to create new folders for each LA
+
+### 6 - Run new_folders function to create new folders for each LA in raw_data_folder
 
 for (la in all_las){
   new_folders(year, la, raw_data_folder)
 }
 
 
+
 ### 7 - Run new_folders_merged function to create new folder for merged data
 
 new_folders_merged(year, raw_data_folder)
+
+
+
+### 8 - Run new_output_folders function to create new folders for each LA and for National in output_folder 
+
+for (la in all_las){
+  new_output_folders(year, la, output_folder)
+}
+
+new_output_folders(year, "National", output_folder)
 
 
 

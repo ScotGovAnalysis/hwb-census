@@ -20,6 +20,8 @@ source(here::here("lookups", "lut_ethnic_background.R"))
 source(here::here("lookups", "lut_urbrur6.R"))
 source(here::here("lookups", "lut_asn.R"))
 source(here::here("lookups", "lut_simd.R"))
+source(here::here("lookups", "lut_care_for_someone.R"))
+source(here::here("lookups", "lut_long_term_condition.R"))
 
 
 
@@ -173,16 +175,14 @@ for (tbl in joined_data) {
 # Arrange columns in the desired order
 joined_dataframe <- joined_dataframe[, c(names(joined_dataframe)[order(match(names(joined_dataframe), all_cols))])]
 
-test <- joined_dataframe %>%
-  filter(pc_stage == "P6")
-
 
 
 ### 6 - Apply lookup tables ----
 
-# Replace NAs in columns Gender, EthnicBackground,UrbRur6, asn, SIMD2020v2_Quintile with "Unknown" (for ease of applying lookups)
+# Replace NAs in columns Gender, EthnicBackground,UrbRur6, asn, SIMD2020v2_Quintile, care_for_someone, long_term_condition with 
+# "Unknown" (for ease of applying lookups)
 # Replace NA values in specified columns with "Unknown"
-cols_to_replace <- c("Gender", "EthnicBackground", "UrbRur6", "asn", "SIMD2020v2_Quintile")
+cols_to_replace <- c("Gender", "EthnicBackground", "UrbRur6", "asn", "SIMD2020v2_Quintile", "care_for_someone", "long_term_condition")
 
 # Loop through columns and replace NA with "Unknown"
 for (col in cols_to_replace) {
@@ -204,15 +204,39 @@ joined_dataframe$asn <- lut_asn[joined_dataframe$asn]
 # Apply lookup table to joined_dataframe to rename variables in column "SIMD2020v2_Quintile"
 joined_dataframe$SIMD2020v2_Quintile <- lut_simd[joined_dataframe$SIMD2020v2_Quintile]
 
+# Apply lookup table to joined_dataframe to rename variables in column "care_for_someone"
+joined_dataframe$care_for_someone <- lut_care_for_someone[joined_dataframe$care_for_someone]
+
+# Apply lookup table to joined_dataframe to rename variables in column "long_term_condition"
+joined_dataframe$long_term_condition <- lut_long_term_condition[joined_dataframe$long_term_condition]
 
 
-### 7 - Save joined_dataframe as an excel file to Merged folder ----
+
+### 7 - Remove characteristics from East Renfrewshire records ----
+
+# If a respondent completed the survey in a local authority that wasn't East Renfrewshire, but that respondent's scn was East Renfrewshire 
+# in the pupil census, then for analysis they will be counted as East Renfrewshire. As such, their characteristics must be removed.
+
+# Replace characteristics hwb_scn, school_name and seed_code with "Data not collected" when pc_la = "East Renfrewshire"
+joined_dataframe$hwb_scn[joined_dataframe$pc_la == "East Renfrewshire"] <- "Data not collected"
+joined_dataframe$school_name[joined_dataframe$pc_la == "East Renfrewshire"] <- "Data not collected"
+joined_dataframe$seed_code[joined_dataframe$pc_la == "East Renfrewshire"] <- "Data not collected"
+
+# Replace characteristics Gender, EthnicBackground, UrbRur6, asn, SIMD2020v2_Quintile with "Not known" when pc_la = "East Renfrewshire"
+joined_dataframe$Gender[joined_dataframe$pc_la == "East Renfrewshire"] <- "Not known"
+joined_dataframe$EthnicBackground[joined_dataframe$pc_la == "East Renfrewshire"] <- "Not known"
+joined_dataframe$UrbRur6[joined_dataframe$pc_la == "East Renfrewshire"] <- "Not known"
+joined_dataframe$asn[joined_dataframe$pc_la == "East Renfrewshire"] <- "Not known"
+joined_dataframe$SIMD2020v2_Quintile[joined_dataframe$pc_la == "East Renfrewshire"] <- "Not known"
+
+
+
+### 8 - Save joined_dataframe as an excel file to Merged folder ----
 
 write_xlsx(
   joined_dataframe,
   file.path(raw_data_folder, year, "Merged", paste0("09_joined_stages.xlsx"))
 )
-
 
 
 ### END OF SCRIPT ###

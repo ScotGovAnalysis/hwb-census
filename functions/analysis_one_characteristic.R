@@ -1,23 +1,25 @@
-analysis_one_characteristic <- function(var, que, que_quo, cat) {
+analysis_one_characteristic <- function(dataset, var, que, que_quo, cat_order) {
+  cat_vector <- get(cat_order)
+  
   a <-
     rbind(
       (
-        hwb_analysis %>% 
+        dataset %>% 
           select({{var}}, {{que}}) %>% 
           group_by({{var}}) %>%  
           count({{que}}) %>%  
           pivot_wider(names_from = c({{var}}), values_from = n) %>% 
-          filter({{que}} != "NA" & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>% 
+          filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>% 
           adorn_percentages("col") %>% 
           adorn_pct_formatting(digits = 1, rounding = "half to even", affix_sign = FALSE)
       ),
       (
-        hwb_analysis %>% 
+        dataset %>% 
           select({{var}}, {{que}}) %>% 
           group_by({{var}}) %>% 
           count({{que}}) %>%  
           pivot_wider(names_from = c({{var}}), values_from = n) %>% 
-          filter({{que}} != "NA" & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>% 
+          filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>% 
           adorn_totals() %>% 
           slice_tail()
       )
@@ -25,15 +27,15 @@ analysis_one_characteristic <- function(var, que, que_quo, cat) {
   
   b <- rbind(
     (
-      hwb_analysis %>% 
-        filter({{que}} != "NA" & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>%
+      dataset %>% 
+        filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>%
         count({{que}}) %>%
         adorn_percentages("col") %>% 
         adorn_pct_formatting(digits = 1, rounding = "half to even", affix_sign = FALSE)
     ),
     (
-      hwb_analysis %>% 
-        filter({{que}} != "NA" & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>%
+      dataset %>% 
+        filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>%
         count({{que}}) %>%
         adorn_totals() %>% 
         slice_tail())
@@ -41,12 +43,12 @@ analysis_one_characteristic <- function(var, que, que_quo, cat) {
     rename(`Total %` = n)
   
   c <- bind_cols(a, select(b, -intersect(names(a), names(b)))) %>% 
-    mutate("Survey Question" = que_quo) %>% 
+    mutate("Survey question" = que_quo) %>% 
     rename("Response" = que_quo) %>% 
-    arrange(match(Response, cat))
+    arrange(match(Response, cat_vector))
   
-  # Move "Survey Question" to the first column position
-  d <- c[, c("Survey Question", setdiff(names(c), "Survey Question"))]
+  # Move "Survey question" to the first column position
+  d <- c[, c("Survey question", setdiff(names(c), "Survey question"))]
   
   return(d)
 }

@@ -11,7 +11,7 @@ analysis_stage_and_characteristic <- function(dataset, var, que, que_quo, cat_or
           pivot_wider(names_from = c(pc_stage, {{var}}), values_from = n) %>% 
           filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>% 
           adorn_percentages("col") %>% 
-          adorn_pct_formatting(digits = 1, rounding = "half to even", affix_sign = FALSE)
+          adorn_pct_formatting(digits = 10, rounding = "half to even", affix_sign = FALSE)
       ),
       (
         dataset %>% 
@@ -33,7 +33,7 @@ analysis_stage_and_characteristic <- function(dataset, var, que, que_quo, cat_or
           pivot_wider(names_from = c({{var}}), values_from = n) %>% 
           filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>% 
           adorn_percentages("col") %>% 
-          adorn_pct_formatting(digits = 1, rounding = "half to even", affix_sign = FALSE)
+          adorn_pct_formatting(digits = 10, rounding = "half to even", affix_sign = FALSE)
       ),
       (
         dataset %>% 
@@ -55,7 +55,7 @@ analysis_stage_and_characteristic <- function(dataset, var, que, que_quo, cat_or
         filter(!is.na({{que}}) & {{que}} != "Data not collected" & {{que}} != "Not applicable" & {{que}} != "Question not asked of stage") %>%
         count({{que}}) %>%
         adorn_percentages("col") %>% 
-        adorn_pct_formatting(digits = 1, rounding = "half to even", affix_sign = FALSE)
+        adorn_pct_formatting(digits = 10, rounding = "half to even", affix_sign = FALSE)
     ),
     (
       dataset %>% 

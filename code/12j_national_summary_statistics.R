@@ -95,10 +95,6 @@ pupil_census <- left_join(pupil_census, dz_simd, by = c("Datazone2011" = "DZ"))
 pupil_census <- pupil_census %>%
   select(-StudentId, -OnRoll, -Datazone2011)
 
-# Remove local authorities that didn't participate in HWB survey
-pupil_census <- pupil_census %>%
-  filter(LaCode %in% all_las)
-
 # Rename columns "LaCode" to "pc_la" and "StudentStage" to "pc_stage" for comparison to hwb data
 pupil_census <- pupil_census %>%
   rename(pc_la = LaCode, pc_stage = StudentStage)
@@ -125,75 +121,66 @@ pupil_census$asn <- lut_asn[pupil_census$asn]
 # Apply lookup table to pupil_census to rename variables in column "SIMD2020v2_Quintile"
 pupil_census$SIMD2020v2_Quintile <- lut_simd[pupil_census$SIMD2020v2_Quintile]
 
+# Remove local authorities that didn't participate in HWB survey
+pupil_census <- pupil_census %>%
+  filter(pc_la %in% all_las)
 
 
 
-### 5 - Create table of number of responses by local authority ----
+### 5 - Create first two tables of responses by local authority ----
 
-# Function to perform analysis of counts
-perform_summary <- function(data, var) {
-  result <- data %>%
-    filter({{ var }} != "Not known") %>%
-    count({{ var }}, pc_stage) %>%
+# Perform analysis of counts for hwb
+hwb_count_la <- hwb_analysis %>%
+    count(pc_la, pc_stage) %>%
     pivot_wider(names_from = pc_stage, values_from = n, values_fill = 0) %>%
     adorn_totals(c("row")) %>%
     mutate(Total = rowSums(across(-1)))
-  
-  return(result)
-}
 
-# List of variables
-variables <- c("pc_la", "Gender", "SIMD2020v2_Quintile", "EthnicBackground", "UrbRur6", "asn")
+# Perform analysis of counts for pupil census
+pc_count_la <- pupil_census %>%
+  count(pc_la, pc_stage) %>%
+  pivot_wider(names_from = pc_stage, values_from = n, values_fill = 0) %>%
+  adorn_totals(c("row")) %>%
+  mutate(Total = rowSums(across(-1)))
 
-# Applying perform_summary function to each variable and storing output as a named list for hwb
-hwb_output_list <- map(set_names(variables), ~ perform_summary(hwb_analysis, !!as.name(.x)))
+# Create a new dataframe to store the results
+hwb_pct_la <- data.frame(hwb_count_la[, 1])  # Keep the first column from summary_table
 
-# Applying perform_summary function to each variable and storing output as a named list for pupil_census
-pc_output_list <- map(set_names(variables), ~ perform_summary(pupil_census, !!as.name(.x)))
-
-
-
-### 6 - Create table of percentage of respondents by stage and local authority ----
-
-# Initialize final_list as an empty list to store the results
-final_list <- list()
-
-# Loop through each common name and perform the division operation
-for (name in variables) {
-  # Extract the tibbles with the same name from each list
-  summary_table <- hwb_output_list[[name]]
-  summary_table_pc <- pc_output_list[[name]]
-  
-  # Create an empty dataframe with the same dimensions as summary_table to store results
-  test <- data.frame(matrix(ncol = ncol(summary_table), nrow = nrow(summary_table)))
-  colnames(test) <- colnames(summary_table)
-  rownames(test) <- rownames(summary_table)
-  
-  # Keep the first column of summary_table in the test dataframe
-  test[, 1] <- summary_table[, 1]
-  
-  # Loop through each row and column (excluding the first column)
-  for (i in 1:nrow(summary_table)) {
-    for (j in 2:ncol(summary_table)) { # Start from the second column as the first one is not numeric
-      # For the columns other than the first one, perform the division and store the result in the test dataframe
-      test[i, j] <- round(summary_table[i, j] / summary_table_pc[i, j] * 100, 2)
-    }
+# Loop through each row and column (excluding the first column) to perform the division operation
+for (i in 1:nrow(hwb_count_la)) {
+  for (j in 2:ncol(hwb_count_la)) { # Start from the second column as the first one is not numeric
+    # For the columns other than the first one, perform the division and store the result in the test dataframe
+    hwb_pct_la[i, j] <- round(hwb_count_la[i, j] / pc_count_la[i, j] * 100, 2)
   }
-  
-  # Assign the last row as counts, not percentages
-  last_row <- nrow(summary_table)
-  test[last_row, -1] <- round(summary_table[last_row, -1], 0)
-  
-  # Assign the resulting dataframe to final_list with the name as the list element
-  final_list[[name]] <- test
 }
 
 
 
-### 7 - Add count of stage and local authority to final_list ----
+### 6 - Create last five tables of percentage of respondents by stage and characteristic ----
+  
+# For Gender and asn we don't want "Not known" as a response option, we do for the other characteristics  
 
-# Adding pc_la from hwb_output_list to final_list with the new name pc_la_count in the first position in the list
-final_list <- c(list(pc_la_count = hwb_output_list$pc_la), final_list)
+cat_order_1 <- c("Female",
+                 "Male")
+
+hwb_analysis_filtered_gender <- hwb_analysis %>%
+  filter(Gender != "Not known")
+
+hwb_analysis_filtered_asn <- hwb_analysis %>%
+  filter(asn != "Not known")
+
+hwb_Gender <- analysis_one_characteristic(hwb_analysis_filtered_gender, pc_stage, Gender, "Gender", "cat_order_1")
+hwb_SIMD2020v2_Quintile <- analysis_one_characteristic(hwb_analysis, pc_stage, SIMD2020v2_Quintile, "SIMD2020v2_Quintile", "cat_order_1")
+hwb_EthnicBackground <- analysis_one_characteristic(hwb_analysis, pc_stage, EthnicBackground, "EthnicBackground", "cat_order_1")
+hwb_UrbRur6 <- analysis_one_characteristic(hwb_analysis, pc_stage, UrbRur6, "UrbRur6", "cat_order_1")
+hwb_asn <- analysis_one_characteristic(hwb_analysis_filtered_asn, pc_stage, asn, "asn", "cat_order_1")
+
+
+
+### 7 - Create list of all seven dataframes ----
+
+final_list <- list(hwb_count_la, hwb_pct_la, hwb_Gender, hwb_SIMD2020v2_Quintile, hwb_EthnicBackground, hwb_UrbRur6, hwb_asn)
+names(final_list) <- c("hwb_count_la", "hwb_pct_la", "hwb_Gender", "hwb_SIMD2020v2_Quintile", "hwb_EthnicBackground", "hwb_UrbRur6", "hwb_asn")
 
 
 

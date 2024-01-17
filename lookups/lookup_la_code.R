@@ -1,4 +1,4 @@
-lut_la_code <- c("120" = "Angus",
+lookup_la_code <- c("120" = "Angus",
                  "150" = "Clackmannanshire",
                  "170" = "Dumfries & Galloway",
                  "180" = "Dundee",

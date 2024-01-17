@@ -26,6 +26,9 @@ library(cli)
 library(usethis)
 library(purrr)
 library(DBI)
+library(RtoSQLServer)
+library(glue)
+
 
 
 ### 2 - Load functions (from functions folder) ----
@@ -45,6 +48,8 @@ raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Sur
 
 year <- 2022
 
+pupil_census_year <- 2021
+
 all_las <- c(
   "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee",
   "East Renfrewshire", "Edinburgh City", "Falkirk", "Glasgow",
@@ -58,7 +63,6 @@ all_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
 # Accepted patterns: Q1. Q1.1. Q11.1 Q1.11 Q11.11
 q_pattern <- "Q\\d{1,2}\\.(\\d{1,2}\\.)?"
 
-pupil_census_year <- 2021
 
 
 ### 5 - Create output folder ----

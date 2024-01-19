@@ -1,4 +1,4 @@
-lut_ethnic_background <- c("01" = "White - Scottish",
+lookup_ethnic_background <- c("01" = "White - Scottish",
                            "02" = "African - African / Scottish / British",
                            "03" = "Caribbean or Black - Caribbean / British / Scottish",
                            "05" = "Asian - Indian/British/Scottish",

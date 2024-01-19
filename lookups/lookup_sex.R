@@ -1,3 +1,3 @@
-lut_sex <- c("F" = "Female",
+lookup_sex <- c("F" = "Female",
              "M" = "Male",
              "Unknown" = "Not known")

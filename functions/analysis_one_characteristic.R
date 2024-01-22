@@ -1,6 +1,10 @@
+# Function for analysing and formatting data by a specific characteristic (variable) in a dataset
 analysis_one_characteristic <- function(dataset, var, que, que_quo, cat_order) {
+  
+  # Get the category vector based on the specified order
   cat_vector <- get(cat_order)
   
+  # Step 1: Calculate percentages and format for the specified variable and question
   a <-
     rbind(
       (
@@ -25,6 +29,7 @@ analysis_one_characteristic <- function(dataset, var, que, que_quo, cat_order) {
       )
     )
   
+  # Step 2: Calculate overall percentages for the specified question
   b <- rbind(
     (
       dataset %>% 
@@ -42,13 +47,15 @@ analysis_one_characteristic <- function(dataset, var, que, que_quo, cat_order) {
   ) %>%
     rename(`Total %` = n)
   
+  # Step 3: Combine the calculated percentages and totals, and add the survey question as a column
   c <- bind_cols(a, select(b, -intersect(names(a), names(b)))) %>% 
     mutate("Survey question" = que_quo) %>% 
     rename("Response" = que_quo) %>% 
     arrange(match(Response, cat_vector))
   
-  # Move "Survey question" to the first column position
+  # Step 4: Move "Survey question" to the first column position
   d <- c[, c("Survey question", setdiff(names(c), "Survey question"))]
   
+  # Step 5: Return the formatted data
   return(d)
 }

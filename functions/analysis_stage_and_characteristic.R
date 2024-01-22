@@ -1,4 +1,7 @@
+# Function for analysing and formatting data by stage and a specific characteristic (variable) in a dataset
 analysis_stage_and_characteristic <- function(dataset, var, que, que_quo, cat_order) {
+  
+  # Get the category vector based on the specified order
   cat_vector <- get(cat_order)
   
   a <- left_join(

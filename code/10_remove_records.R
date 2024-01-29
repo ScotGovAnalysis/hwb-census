@@ -132,10 +132,10 @@ joined_data <- joined_data %>%
 ### 6 - Initialise removed_records as an empty dataframe, with the same column names as joined_data ---
 
 # Records which have been removed from final_data_combined will get added to removed_records along with an explanation of why
-removed_records <- joined_data[FALSE, ]  
-
-# Insert a new column "reason_removed" into removed_records
-removed_records$reason_removed <- "No reason provided"
+removed_records <-
+  joined_data %>%
+  filter(FALSE) %>%
+  mutate(reason_removed = "No reason provided") # Insert a new column "reason_removed"
 
 
 
@@ -198,19 +198,24 @@ removed_records <- update_removed_records(removed_records, pc_la_didnt_take_part
 
 ### 10 - Remove duplicate SCNs within each stage ---
 
-# Create a copy of the original data frame
-joined_data_copy <- joined_data
-
-# Create a modified column for checking duplicates
+# Create a modified copy of joined_data
+# This is so we can temporarily pretend P5 & P6, and S5 & S6 pupils are in the same stage
 # This is because P5 and P6 pupils completed the same questionnaire as well as S5 and S6 pupils
-joined_data_copy$hwb_stage_modified <- gsub("P5", "P6", joined_data_copy$hwb_stage)
-joined_data_copy$hwb_stage_modified <- gsub("S5", "S6", joined_data_copy$hwb_stage_modified)
+joined_data_copy <- joined_data %>%
+  mutate(survey_completed = case_when(
+    hwb_stage == "P5" ~ "P6",
+    hwb_stage == "S5" ~ "S6",
+    TRUE ~ hwb_stage
+  ))
 
 # Identify and extract rows with duplicated hwb_scn's
-duplicate_scns_within_stage <- joined_data_copy[duplicated(joined_data_copy[c("hwb_scn", "hwb_stage_modified")]) | duplicated(joined_data_copy[c("hwb_scn", "hwb_stage_modified")], fromLast = TRUE), ]
+duplicate_scns_within_stage <- 
+  joined_data_copy %>%
+  get_dupes(hwb_scn, survey_completed)
 
-# Remove the modified column as now not needed
-duplicate_scns_within_stage <- duplicate_scns_within_stage[, !(names(duplicate_scns_within_stage) %in% c("hwb_stage_modified"))]
+# Remove the survey_completed column as now not needed
+duplicate_scns_within_stage <- duplicate_scns_within_stage %>%
+  select(-survey_completed, -dupe_count)
 
 # Add a new column "number_questions_answered" to count non-missing values
 duplicate_scns_within_stage <- duplicate_scns_within_stage %>%
@@ -244,7 +249,7 @@ removed_records <- removed_records %>%
 # Save excel file to output folder
 write_xlsx(
   removed_records, 
-  here("output", year, paste0(year, "_records_removed.xlsx"))
+  here("output", year, paste0(year, "_records_removed2.xlsx"))
 )
 
 
@@ -255,7 +260,8 @@ write_xlsx(
 removed_records <- removed_records %>%
   select(-reason_removed, -number_questions_answered)
 
-# Identify rows in joined_data that appear more than once as some pupils completed the exact same survey
+# Identify rows in joined_data that appear more than once as some pupils completed the exact same survey. In this instance, we want them in final data ONCE and 
+# in removed_records ALL BUT ONCE.
 duplicated_rows <- joined_data[duplicated(joined_data) | duplicated(joined_data, fromLast = TRUE), ]
     
 # Anti-join with removed_records to keep only rows in joined_data that are not in removed_records
@@ -307,7 +313,7 @@ joined_data_removed <- joined_data_removed %>%
 
 write_xlsx(
   joined_data_removed,
-  file.path(raw_data_folder, year, "Merged", paste0("08_removed_records.xlsx"))
+  file.path(raw_data_folder, year, "Merged", paste0("08_removed_records2.xlsx"))
 )
 
 

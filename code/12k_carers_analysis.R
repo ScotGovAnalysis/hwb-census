@@ -58,13 +58,13 @@ variables <- data.frame(
 ### 5 - Perform analysis on selected variables ---
 
 # For national
-hwb_pc_stage <- analysis_one_characteristic(hwb_analysis, pc_stage, care_for_someone, "care_for_someone", "cat_order_1")
-hwb_Gender <- analysis_one_characteristic(hwb_analysis, Gender, care_for_someone, "care_for_someone", "cat_order_1")
-hwb_EthnicBackground <- analysis_one_characteristic(hwb_analysis, EthnicBackground, care_for_someone, "care_for_someone", "cat_order_1")
-hwb_SIMD2020v2_Quintile <- analysis_one_characteristic(hwb_analysis, SIMD2020v2_Quintile, care_for_someone, "care_for_someone", "cat_order_1")
+stage <- analysis_one_characteristic(hwb_analysis, pc_stage, care_for_someone, "care_for_someone", "cat_order_1")
+sex <- analysis_one_characteristic(hwb_analysis, Gender, care_for_someone, "care_for_someone", "cat_order_1")
+ethnic_group <- analysis_one_characteristic(hwb_analysis, EthnicBackground, care_for_someone, "care_for_someone", "cat_order_1")
+simd <- analysis_one_characteristic(hwb_analysis, SIMD2020v2_Quintile, care_for_someone, "care_for_someone", "cat_order_1")
 
-national_carers_analysis <- list(hwb_pc_stage, hwb_Gender, hwb_EthnicBackground, hwb_SIMD2020v2_Quintile)
-names(national_carers_analysis) <- c("pc_stage", "Gender", "EthnicBackground", "SIMD2020v2_Quintile")
+national_carers_analysis <- list(stage, sex, ethnic_group, simd)
+names(national_carers_analysis) <- c("stage", "sex", "ethnic_group", "simd")
 
 # For each local authority
 # Initialize empty list
@@ -74,13 +74,13 @@ for (la in all_las) {
   hwb_la <- hwb_analysis %>%
     filter(pc_la == la)
   
-  pc_stage <- analysis_one_characteristic(hwb_la, pc_stage, care_for_someone, "care_for_someone", "cat_order_1")
-  Gender <- analysis_one_characteristic(hwb_la, Gender, care_for_someone, "care_for_someone", "cat_order_1")
-  EthnicBackground <- analysis_one_characteristic(hwb_la, EthnicBackground, care_for_someone, "care_for_someone", "cat_order_1")
-  SIMD2020v2_Quintile <- analysis_one_characteristic(hwb_la, SIMD2020v2_Quintile, care_for_someone, "care_for_someone", "cat_order_1")
+  stage <- analysis_one_characteristic(hwb_la, pc_stage, care_for_someone, "care_for_someone", "cat_order_1")
+  sex <- analysis_one_characteristic(hwb_la, Gender, care_for_someone, "care_for_someone", "cat_order_1")
+  ethnic_group <- analysis_one_characteristic(hwb_la, EthnicBackground, care_for_someone, "care_for_someone", "cat_order_1")
+  simd <- analysis_one_characteristic(hwb_la, SIMD2020v2_Quintile, care_for_someone, "care_for_someone", "cat_order_1")
   
-  la_carers_analysis <- list(pc_stage, Gender, EthnicBackground, SIMD2020v2_Quintile)
-  names(la_carers_analysis) <- c("pc_stage", "Gender", "EthnicBackground", "SIMD2020v2_Quintile")
+  la_carers_analysis <- list(stage, sex, ethnic_group, simd)
+  names(la_carers_analysis) <- c("stage", "sex", "ethnic_group", "simd")
   
   local_authority_list[[paste0(la, "_carers_analysis")]] <- la_carers_analysis
 }
@@ -92,13 +92,13 @@ for (la in all_las) {
 # Save national
 write_xlsx(
   national_carers_analysis,
-  here("output", year, "National", paste0(year, "_carers_analysis.xlsx"))
+  here("output", year, "National", "Output", paste0(year, "_carers_analysis.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, paste0(year, "_carers_analysis.xlsx"))
+  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_carers_analysis.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

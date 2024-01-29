@@ -1,10 +1,18 @@
 perform_data_suppression <- function(original_data) {
+  
+  # Convert columns 4 to end to numeric
+  original_data <- lapply(original_data, function(df) {
+    df[, 4:ncol(df)] <- lapply(df[, 4:ncol(df)], as.numeric)
+    df[is.na(df)] <- 0
+    df
+  })
+  
   # Function to filter numeric columns
   filter_numeric_cols <- function(df) {
     df %>% select_if(is.numeric)
   }
   
-  # Creating a list of numeric data frames
+  # Applying the function to filter numeric columns in each dataframe
   numeric_data_list <- lapply(original_data, filter_numeric_cols)
   
   # Function to create output and data
@@ -27,14 +35,7 @@ perform_data_suppression <- function(original_data) {
   output_and_data <- create_output_and_data(numeric_data_list, original_data)
   
   # Find indexes for question ends
-  questions <- original_data$stage[, 1]
-  indexes <- list()
-  for(qq in 1:(nrow(questions)-1)){
-    if(questions[qq,] != questions[qq+1,]){
-      indexes = append(indexes,qq)
-    }
-  }
-  indexes = append(indexes, nrow(questions))
+  indexes <- c(which(original_data$stage[, 2] != lead(original_data$stage[, 2])), nrow(original_data$stage))
   
   # Primary and secondary suppression of cells (not including total row)
   count <- 0
@@ -44,7 +45,7 @@ perform_data_suppression <- function(original_data) {
     count = count + 1
     for (i1 in indexes){
       
-      current_q <- x$datas[i0:i1,3:ncol(x$datas)]
+      current_q <- x$datas[i0:i1,4:ncol(x$datas)]
       
       for(col in 1:ncol(current_q)){
         
@@ -64,23 +65,26 @@ perform_data_suppression <- function(original_data) {
             }
           }
           
-          # Secondary suppression
-          if(c_count == 1 & nrow(current_q) > 2){
-            
-            min <- Inf
-            
-            for(row in 1:(nrow(current_q)-1)){
+          # Secondary suppression excluding questions which don't sum to 100% (tick box questions)
+          if (c_count == 1 & nrow(current_q) > 2) {
+            current_question <- x$datas[i0+row-1,'Survey question']
+            if (!(current_question %in% c("Where have you been bullied?", 
+                                          "Which, if any, of these things have you done in the last year?",
+                                          "Average WEMWBS score"))) {
+              min <- Inf
               
-              if (current_q[row,col]<min && x$outputs[i0+row-1,col]!="[c]"){
-                min = current_q[row, col]
-                next_lowest_row <- row
+              for(row in 1:(nrow(current_q)-1)){
+                
+                if (current_q[row,col]<min && x$outputs[i0+row-1,col]!="[c]"){
+                  min = current_q[row, col]
+                  next_lowest_row <- row
+                  
+                }
                 
               }
               
+              x$outputs[i0+next_lowest_row-1,col] = "[c]"
             }
-            
-            x$outputs[i0+next_lowest_row-1,col] = "[c]"
-            
           }
           
         }
@@ -127,7 +131,7 @@ perform_data_suppression <- function(original_data) {
     count = count + 1
     for (ii1 in indexes){
       
-      current_qq <- x$datas_2[ii0:ii1,3:ncol(x$datas_2)]
+      current_qq <- x$datas_2[ii0:ii1,4:ncol(x$datas_2)]
       
       for(col in 1:ncol(current_qq)){
         
@@ -168,7 +172,7 @@ perform_data_suppression <- function(original_data) {
       suppressed_data <- suppressed_output_2[[index]]
       tibble_data <- original_data[[tibble_names[i]]]
       
-      combined_data <- cbind(tibble_data[, 1:2], suppressed_data)
+      combined_data <- cbind(tibble_data[, 1:3], suppressed_data)
       all_data_suppressed[[i]] <- combined_data
     }
   }
@@ -177,3 +181,21 @@ perform_data_suppression <- function(original_data) {
   
   return(all_data_suppressed)
 }
+
+
+
+
+# 
+#  tt <- all_raw_data$Angus$`2022_experience_of_bullying`
+#  
+#  dd <- combined_data$Angus
+# 
+# c <- perform_data_suppression(combined_data$Angus)
+# d <- perform_data_suppression(combined_data$Clackmannanshire)
+# all_data_suppressed <- list(c, d)
+# 
+# ddd <- c$ethnic_group
+
+
+
+

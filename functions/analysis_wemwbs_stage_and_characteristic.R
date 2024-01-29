@@ -9,8 +9,8 @@ analysis_wemwbs_stage_and_characteristic <- function(dataset, var) {
           summarise(mean_wemwbs = mean(total_wemwbs)) %>% 
           mutate(mean_wemwbs = round(mean_wemwbs, digits = 1)) %>%
           pivot_wider(names_from = c(pc_stage, {{var}}), values_from = 3) %>%
-          mutate(`Survey question` = 'Average WEMWBS score') %>%
-          select(`Survey question`, everything())
+          mutate(`Response` = 'Average WEMWBS score') %>%
+          select(`Response`, everything())
       ),
       (
         dataset %>%
@@ -19,8 +19,8 @@ analysis_wemwbs_stage_and_characteristic <- function(dataset, var) {
           group_by(pc_stage, {{var}}) %>%
           count() %>%
           pivot_wider(names_from = c(pc_stage, {{var}}), values_from = 3) %>%
-          mutate(`Survey question` = 'Average WEMWBS score') %>%
-          select(`Survey question`, everything()) %>%
+          mutate(`Response` = 'Average WEMWBS score') %>%
+          select(`Response`, everything()) %>%
           adorn_totals() %>% 
           slice_tail()
       )
@@ -34,8 +34,8 @@ analysis_wemwbs_stage_and_characteristic <- function(dataset, var) {
           summarise(mean_wemwbs = mean(total_wemwbs)) %>% 
           mutate(mean_wemwbs = round(mean_wemwbs, digits = 1)) %>%
           pivot_wider(names_from = c({{var}}), values_from = 2) %>% 
-          mutate(`Survey question` = 'Average WEMWBS score') %>%
-          select(`Survey question`, everything())
+          mutate(`Response` = 'Average WEMWBS score') %>%
+          select(`Response`, everything())
       ),
       (
         dataset %>% 
@@ -44,13 +44,13 @@ analysis_wemwbs_stage_and_characteristic <- function(dataset, var) {
           group_by({{var}}) %>% 
           count() %>%
           pivot_wider(names_from = c({{var}}), values_from = 2) %>%
-          mutate(`Survey question` = 'Average WEMWBS score') %>%
-          select(`Survey question`, everything()) %>%
+          mutate(`Response` = 'Average WEMWBS score') %>%
+          select(`Response`, everything()) %>%
           adorn_totals() %>% 
           slice_tail()
       )
     ),
-    by = 'Survey question'
+    by = 'Response'
   )
   
   b <- rbind(
@@ -58,13 +58,13 @@ analysis_wemwbs_stage_and_characteristic <- function(dataset, var) {
        filter(!is.na(total_wemwbs)) %>%
        summarise(mean_wemwbs = mean(total_wemwbs)) %>% 
        mutate(mean_wemwbs = round(mean_wemwbs, digits = 1)) %>%
-       mutate(`Survey question` = 'Average WEMWBS score') %>%
+       mutate(`Response` = 'Average WEMWBS score') %>%
        rename(`Total %` = mean_wemwbs) %>% 
-       select(`Survey question`, everything())),
+       select(`Response`, everything())),
     (dataset %>% 
        filter(!is.na(total_wemwbs)) %>%
        count(total_wemwbs) %>%
-       rename(`Survey question` = total_wemwbs) %>% 
+       rename(`Response` = total_wemwbs) %>% 
        rename(`Total %` = n) %>% 
        adorn_totals() %>% 
        slice_tail())
@@ -72,5 +72,7 @@ analysis_wemwbs_stage_and_characteristic <- function(dataset, var) {
   
   c <- bind_cols(a, select(b, -intersect(names(a), names(b))))
   
-  return(c)
+  d <- cbind(`Survey question` = "Average WEMWBS score", c)
+  
+  return(d)
 }

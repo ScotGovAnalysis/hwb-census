@@ -104,13 +104,13 @@ local_authority_list <- map(local_authority_list, ~ map(., convert_to_character)
 # Save national
 write_xlsx(
   national_wemwbs,
-  here("output", year, "National", paste0(year, "_mental_health_and_wellbeing_wemwbs.xlsx"))
+  here("output", year, "National", "Output", paste0(year, "_mental_health_and_wellbeing_wemwbs.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, paste0(year, "_mental_health_and_wellbeing_wemwbs.xlsx"))
+  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_mental_health_and_wellbeing_wemwbs.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

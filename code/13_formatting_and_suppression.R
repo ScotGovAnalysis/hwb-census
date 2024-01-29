@@ -16,274 +16,292 @@
 source(here::here("code", "00_setup.R"))
 source(here::here("functions", "read_raw_data.R"))
 source(here::here("functions", "perform_data_suppression.R"))
+source(here::here("functions", "perform_formatting.R"))
+source(here::here("functions", "perform_workbook_formatting.R"))
 
 
-### 1 - Read in data ----
 
-# Read in dataframes for shetland attitudes and store as list
-file_path <- here("output", year, "Shetland", paste0(year, "_attitudes_to_school_and_aspirations.xlsx"))
+### 1 - Read in raw data ----
 
-shetland_attitudes_to_school_and_aspirations <- setNames(
-  lapply(excel_sheets(file_path), function(sheet) readxl::read_xlsx(file_path, sheet = sheet)),
-  excel_sheets(file_path)
+# Function to read Excel files and return a list of lists of tibbles
+read_excel_files <- function(directory) {
+  # Get the list of Excel files in the specified directory
+  excel_files <- list.files(path = directory, pattern = "\\.xlsx$", full.names = TRUE)
+  
+  # Initialize an empty list to store the raw data
+  raw_data <- list()
+  
+  # Loop through each Excel file
+  for (file in excel_files) {
+    # Inform user about the file being read
+    cat("Reading file:", file, "\n")
+    
+    # Extract the file name without extension
+    file_name <- tools::file_path_sans_ext(basename(file))
+    
+    # Read all sheets from the Excel file
+    sheets <- readxl::excel_sheets(file)
+    
+    # Initialize a list to store tibbles for each sheet
+    sheet_data <- list()
+    
+    # Loop through each sheet in the Excel file
+    for (sheet in sheets) {
+      # Read the data from the current sheet
+      sheet_data[[sheet]] <- readxl::read_excel(file, sheet = sheet)
+    }
+    
+    # Add the sheet data to the raw_data list with the file name as the key
+    raw_data[[file_name]] <- sheet_data
+  }
+  
+  return(raw_data)
+}
+
+# Initialize an empty list to store all raw data
+all_raw_data <- list()
+
+# Loop through each directory
+for (las in all_las) {
+  # Set the file path for the current directory
+  file_path <- here("output", year, las, "Output")
+  
+  # Inform user about the directory being processed
+  cat("Processing directory:", file_path, "\n")
+  
+  # Read data for the current directory
+  raw_data <- read_excel_files(file_path)
+  
+  # Append the results to the list
+  all_raw_data[[las]] <- raw_data
+}
+
+# Read data from the "National" folder and add to all_raw_data list
+national_file_path <- here("output", year, "National", "Output")
+cat("Processing directory:", national_file_path, "\n")
+national_raw_data <- read_excel_files(national_file_path)
+all_raw_data[["National"]] <- national_raw_data
+
+
+
+### 2 - Read in column names metadata ----
+
+# This is used to replace values in the 'Survey question' column when formatting
+# Read in metadata headers for each stage and store as a list of data frames
+metadata_headers <- 
+  map(
+    set_names(all_stages),
+    ~ read_xlsx(here(
+      "metadata", 
+      year,
+      paste0("hwb_metadata_", tolower(.x), "_column_names.xlsx")
+    ))
+  ) 
+
+# Restrict each tibble to only the columns "code" and "question_header2"
+metadata_headers <- lapply(metadata_headers, function(tibble) {
+  select(tibble, code, question_header2) %>%
+    mutate(
+      question_header2 = str_remove(question_header2, paste0(q_pattern, "\\s"))
+    )
+})
+
+# Convert list of dataframes into one dataframe using bind_rows, and remove duplicates
+metadata_headers <- bind_rows(metadata_headers) %>% 
+  distinct()
+
+
+
+### 3 - Join dataframes for each local authority together ----
+
+# Function to add 'Survey topic' column as the first column in each tibble
+add_survey_topic_column <- function(data, topic_name) {
+  lapply(data, function(tbl) {
+    tbl <- cbind(`Survey topic` = rep(topic_name, each = nrow(tbl)), tbl)
+    tbl
+  })
+}
+
+# Loop through each top-level list in all_raw_data
+for (region_name in names(all_raw_data)) {
+  region <- all_raw_data[[region_name]]
+  
+  # Loop through sublists within each top-level list
+  for (sublist_name in names(region)) {
+    sublist <- region[[sublist_name]]
+    
+    # Check if sublist is a list
+    if (is.list(sublist)) {
+      # Add 'Survey topic' column to each tibble in the sublist
+      all_raw_data[[region_name]][[sublist_name]] <- add_survey_topic_column(sublist, sublist_name)
+    }
+  }
+}
+
+
+# Function to row bind tibbles with the same name
+bind_same_name <- function(lst) {
+  # Get unique names of tibbles
+  tibble_names <- names(lst[[1]])
+
+  # Row bind tibbles with the same name, storing the result in a named list
+  tibble_list <- map(tibble_names, ~ map_dfr(lst, .x))
+
+  # Name the list elements after the original tibble names
+  names(tibble_list) <- tibble_names
+
+  # Return the row binded tibbles in a named list
+  return(tibble_list)
+}
+
+# Apply bind_same_name function to each sub-list in all_raw_data
+combined_data <- map(all_raw_data, bind_same_name)
+
+
+# Function to clean the 'Survey topic' values from "2022_attitudes_to_school_and_aspirations" to "Attitudes to School and Aspirations"
+clean_survey_topic <- function(topic_name) {
+  # Remove numeric characters and first "_", replace remaining "_" with " ", and capitalize the first letter
+  cleaned_topic <- gsub("^\\d+_", "", topic_name)  # Remove leading numeric characters followed by "_"
+  cleaned_topic <- gsub("_", " ", cleaned_topic)  # Replace remaining "_" with " "
+  cleaned_topic <- tools::toTitleCase(cleaned_topic)  # Capitalize the first letter of each word
+
+  # Capitalize specific strings
+  cleaned_topic <- gsub("\\bsdq\\b", "SDQ", cleaned_topic, ignore.case = TRUE)
+  cleaned_topic <- gsub("\\bwemwbs\\b", "WEMWBS", cleaned_topic, ignore.case = TRUE)
+
+  cleaned_topic
+}
+
+# Loop through each top-level list in combined_data
+for (region_name in names(combined_data)) {
+  region <- combined_data[[region_name]]
+
+  # Loop through sublists within each top-level list
+  for (sublist_name in names(region)) {
+    sublist <- region[[sublist_name]]
+
+    # Check if sublist is a list
+    if (is.list(sublist)) {
+      # Clean up the 'Survey topic' column values
+      combined_data[[region_name]][[sublist_name]][['Survey topic']] <- clean_survey_topic(combined_data[[region_name]][[sublist_name]][['Survey topic']])
+    }
+  }
+}
+
+# original_data <- combined_data$Angus
+
+a <- combined_data$National$stage
+b <- combined_data$Shetland$stage
+
+
+# If rows are missing from a tibble, add them in
+# This happens for smaller local authorities, e.g. Shetland, which may have no-one in that local authority choosing a certain response option
+
+# Extract the National list of dataframes
+national_list <- list(stage = combined_data$National$stage,
+                      sex = combined_data$National$sex,
+                      simd = combined_data$National$simd,
+                      urbrur6 = combined_data$National$urbrur6,
+                      ethnic_group = combined_data$National$ethnic_group,
+                      care_for_someone = combined_data$National$care_for_someone,
+                      long_term_condition = combined_data$National$long_term_condition
 )
 
-# Convert columns 3 to end to numeric
-# Function to convert columns 3 to end in each tibble to numeric
-convert_to_numeric <- function(tibble_list) {
-  updated_list <- lapply(tibble_list, function(tibble_item) {
-    # Extract column names from the third column to the end
-    cols_to_convert <- names(tibble_item)[3:ncol(tibble_item)]
+# Loop over each dataframe in the National list
+for (df_name in names(national_list)) {
+  # Get the dataframe from National list
+  national_df <- national_list[[df_name]]
+  
+  # Loop over each row in the dataframe
+  for (i in 1:nrow(national_df)) {
+    # Extract the first three columns
+    row_key <- national_df[i, 1:3]
     
-    # Convert selected columns to numeric
-    tibble_item[cols_to_convert] <- lapply(tibble_item[cols_to_convert], as.numeric)
+    # Check if the row exists in the respective dataframe
+    if (!(df_name %in% names(combined_data)) || 
+        is.null(combined_data[[df_name]])) {
+      combined_data[[df_name]] <- data.frame(matrix(0, ncol = ncol(national_df), nrow = 0))
+      colnames(combined_data[[df_name]]) <- colnames(national_df)
+    }
     
-    return(tibble_item)
+    matching_row <- combined_data[[df_name]][combined_data[[df_name]][, 1] == row_key[1] & 
+                                               combined_data[[df_name]][, 2] == row_key[2] & 
+                                               combined_data[[df_name]][, 3] == row_key[3], ]
+    
+    # If no matching row is found, add a new row with 0s for other columns
+    if (nrow(matching_row) == 0) {
+      new_row <- c(row_key, rep(0, ncol(national_df) - 3))
+      combined_data[[df_name]] <- rbind(combined_data[[df_name]], new_row)
+    }
+  }
+}
+
+
+
+
+
+
+### 4 - Perform data suppression ---
+
+## From here the Response column is getting deleted. Why???
+
+all_data_suppressed <- lapply(combined_data, perform_data_suppression)
+
+
+
+### 5 - Format data as dataframes ----
+
+# all_data_suppressed <- perform_formatting(all_data_suppressed)
+
+# formatted_data <- list()
+# 
+# for (la in all_las) {
+#   formatted_data[[la]] <- lapply(all_data_suppressed[[la]], perform_formatting)
+# }
+
+formatted_data <- lapply(all_data_suppressed, perform_formatting)
+
+
+
+### 5 - Build workbooks ----
+
+# Create a list of workbooks dynamically for each la and topic
+workbook_list <- lapply(names(formatted_data), function(la) {
+  subcategories <- names(formatted_data[[la]])
+  workbooks <- lapply(subcategories, function(topic) {
+    buildWorkbook(formatted_data[[la]][[topic]], gridLines = FALSE)
   })
-  return(updated_list)
-}
-
-# Applying the function to convert columns 3 to end in each tibble to numeric
-shetland_attitudes_to_school_and_aspirations <- convert_to_numeric(shetland_attitudes_to_school_and_aspirations)
-
-# Replace all NA with 0
-# Function to replace NAs with 0 in a tibble
-replace_na_with_zero <- function(df) {
-  df[is.na(df)] <- 0
-  return(df)
-}
-
-# Using map to apply the function to each tibble in the list
-shetland_attitudes_to_school_and_aspirations <- map(shetland_attitudes_to_school_and_aspirations, ~ replace_na_with_zero(.))
-
-
-
-### 2 - Perform data suppression ---
-
-all_data_suppressed <- perform_data_suppression(shetland_attitudes_to_school_and_aspirations)
-
-
-
-### 3 - Format data as dataframes ----
-
-# Round numbers to 1 decimal place (except for Total rows which are integers)
-all_data_suppressed <- lapply(all_data_suppressed, function(df) {
-  # Identify the columns to round (excluding the first two)
-  columns_to_round <- names(df)[-c(1, 2)]
-  
-  # Loop through each column and apply rounding condition
-  for (col in columns_to_round) {
-    # Check if the column is not 'Response = Total'
-    if (col != "Response" && col != "Total") {
-      # Define a function to handle rounding and formatting
-      round_values <- function(value) {
-        if (grepl("^\\d+\\.?\\d*$", value)) {  # Check for numeric pattern
-          rounded_value <- round(as.numeric(value), 1)  # Round numeric values
-          if (as.integer(rounded_value) == rounded_value) {
-            return(sprintf("%.1f", rounded_value))  # Format whole numbers with decimal point and zero
-          } else {
-            return(as.character(rounded_value))  # Convert rounded numeric values to character
-          }
-        } else {
-          return(value)  # Keep non-numeric or suppression indicator values unchanged
-        }
-      }
-      
-      # Apply the rounding and formatting function to the column
-      df[[col]] <- sapply(df[[col]], round_values)
-    }
-  }
-  
-  return(df)
+  names(workbooks) <- subcategories
+  return(workbooks)
 })
 
-# Rename rows from "Total" to "Number of respondents" in the Response column
-for (i in seq_along(all_data_suppressed)) {
-  all_data_suppressed[[i]]$Response[all_data_suppressed[[i]]$Response == "Total"] <- "Number of respondents"
-}
+names(workbook_list) <- names(formatted_data)
 
-# Rename column "Total" to "Total %"
-for (i in seq_along(all_data_suppressed)) {
-  if ("Total" %in% colnames(all_data_suppressed[[i]])) {
-    colnames(all_data_suppressed[[i]])[colnames(all_data_suppressed[[i]]) == "Total"] <- "Total %"
-  }
-}
 
-# Add a blank row after every "Number of respondents" row (except for the last one)
-# Function to add a blank row after "Number of respondents" in each dataframe
-add_blank_rows <- function(df) {
-  row_indices <- which(df$Response == "Number of respondents")
+
+### 6 - Apply workbook formatting ----
+
+formatted_workbook_list <- list()
+
+for (county_name in names(workbook_list)) {
+  county <- workbook_list[[county_name]]
   
-  if (length(row_indices) > 1) {
-    for (index in rev(row_indices[-length(row_indices)])) {
-      blank_row <- rep(NA, ncol(df))
-      df <- rbind(
-        df[1:index, , drop = FALSE],
-        blank_row,
-        df[(index + 1):nrow(df), , drop = FALSE]
-      )
-    }
-  } 
-  return(df)
-}
-
-# Apply the function to each dataframe in the list
-all_data_suppressed <- lapply(all_data_suppressed, add_blank_rows)
-
-# Function to reset row names and make them consecutive (as the ordering was non-consecutive)
-reset_row_names <- function(df) {
-  rownames(df) <- NULL
-  return(df)
-}
-
-# Apply the function to each dataframe in the list
-all_data_suppressed <- lapply(all_data_suppressed, reset_row_names)
-
-
-
-### 4 - Build workbook ----
-
-# Creates a workbook from all_data_suppressed so we can format our data as Excel spreadsheets using the openxlsx package
-wb <- buildWorkbook(all_data_suppressed, gridLines = FALSE)
-
-# Create a list of each sheet and it's respective data
-sheet_and_data <- lapply(seq_along(all_data_suppressed), function(i) {
-  list(sheets = i, data = all_data_suppressed[[i]])
-})
-
-# Convert numbers stored as text to numbers
-for (x in sheet_and_data){
-  for (cn in seq_len(ncol(x$data))) {
-    for (rn in seq_len(nrow(x$data))) {
-      if (!is.numeric(x$data[rn,cn]) && !is.na(val <- as.numeric(as.character(x$data[rn,cn])))) {
-        writeData(wb, x$sheets, val, startCol = cn, startRow = 1L + rn)
-      }
-    }
-  }
-}
-
-
-# Find indexes for question ends
-questions <- all_data_suppressed[[1]][, 1, drop = FALSE]
-
-indexes <- list()
-
-for(qq in 1:(nrow(questions))){
-  if(is.na(questions[qq,] != questions[qq+1,]) & is.na(questions[qq,])){
-    indexes = append(indexes,qq)
-  }
-}
-
-indexes = append(indexes,nrow(questions) + 1)
-
-# Merges survey question rows in first column into one cell
-# Start at j0 = 1 because in excel the first row is 'Survey question' row, although the first row in our df is data
-j0 <- 1
-
-for (j1 in indexes){
-  current_qj <- questions[j0:(j1-1),1, drop = FALSE]
-  for (x in sheet_and_data){
-    mergeCells(wb, x$sheets, 1, rows = (j0+1):(j0+nrow(current_qj)))
-  }
-  j0 = j1 + 1
-}
-
-# Changes the font of all cells in the spreadsheet to be Arial and size 12
-fontStyle <- createStyle(fontName = "Arial", fontSize = 12)
-
-for (x in sheet_and_data){
-  addStyle(wb, x$sheets, fontStyle, cols = 1:ncol(x$data), rows = 1:(nrow(x$data)+1), stack = TRUE, gridExpand = TRUE)
-}
-
-
-# Formats survey questions in column A to be centered (stack = TRUE means that it won't overwrite the formatting in previous createStyles)
-centerStyle <- createStyle(halign = "center", valign = "center", wrapText = TRUE)
-
-for (x in sheet_and_data){
-  addStyle(wb, x$sheets, centerStyle, cols = 1, rows = 2:nrow(x$data), stack = TRUE, gridExpand = TRUE)
-}
-
-
-# Makes font bold
-boldStyle <- createStyle(textDecoration = "bold")
-
-# Makes header row bold
-for (x in sheet_and_data){
-  addStyle(wb, x$sheets, boldStyle, cols = 1:ncol(x$data), rows = 1, stack = TRUE, gridExpand = TRUE)
-}
-
-
-# Makes "Number of respondents" rows bold
-for (x in sheet_and_data){
-  k0 <- 1
-  for (k1 in indexes){
-    current_qk <- x$data[k0:k1, 2:ncol(x$data)]
-    for(col in 1:ncol(current_qk)){
-      for(row in nrow(current_qk)){
-        addStyle(wb, x$sheets, boldStyle, cols = 2:(ncol(current_qk)+1), rows = (k0+nrow(current_qk)-1), gridExpand = TRUE, stack = TRUE)
-      }
-    }
-    k0 = k1+1
-  }
-}
-
-
-# Adds thick bottom border to the first row
-thickborderStyle <- createStyle(border = "bottom", borderStyle = openxlsx_getOp("borderStyle", "thick"))
-
-for (x in sheet_and_data){
-  addStyle(wb, x$sheets, thickborderStyle, cols = 1:ncol(x$data), rows = 1, stack = TRUE, gridExpand = TRUE)
-}
-
-
-# Aligns text to the right
-alignrightStyle <- createStyle(halign = "right")
-
-for (x in sheet_and_data){
-  addStyle(wb, x$sheets, alignrightStyle, cols = 3:ncol(x$data), rows = 1:(nrow(x$data)+1), stack = TRUE, gridExpand = TRUE)
-}
-
-
-# Displays percentages to one decimal place and puts totals in integer format, with a comma for thousands
-decimalStyle <- createStyle(numFmt = '0.0')
-
-for (x in sheet_and_data){
-  addStyle(wb, x$sheets, decimalStyle, cols = 3:ncol(x$data), rows = 2:nrow(x$data), stack = TRUE, gridExpand = TRUE)
-}
-
-
-thousandsStyle <- createStyle(numFmt = 'COMMA')
-
-for (x in sheet_and_data){
-  l0 <- 1
-  for (l1 in indexes){
-    current_ql <- x$data[l0:l1,3:ncol(x$data)]
-    for(col in 1:ncol(current_ql)){
-      for(row in nrow(current_ql)){
-        addStyle(wb, x$sheets, thousandsStyle, cols = 3:(ncol(current_ql)+2), rows = (l0+nrow(current_ql)-1), gridExpand = TRUE, stack = TRUE)
-      }
-    }
-    l0 = l1+1
-  }
-}
-
-# Auto-fit column widths
-# Loop through each data frame in the list
-for (x in sheet_and_data) {
-  
-  # Set column widths based on the content
-  for (col in 1:ncol(x$data)) {
-    max_width <- max(nchar(paste(names(x$data)[col], x$data[, col], sep = "")))  # Find the maximum width in characters
-    setColWidths(wb, x$sheets, cols = col, widths = max_width + 5)  # Add some padding
+  for (sheet_name in names(county)) {
+    workbook <- workbook_list[[county_name]][[sheet_name]]
+    formatted_data_sheet <- formatted_data[[county_name]][[sheet_name]]
+    
+    result <- perform_workbook_formatting(workbook, formatted_data_sheet)
+    
+    formatted_workbook_list[[paste0(county_name, "_", sheet_name)]] <- result
   }
 }
 
 
 
-### 5 - Save outputs as an excel file to Merged folder ----
+### 7 - Save outputs as an excel file to Merged folder ----
 
 # Saves the workbook as an excel sheet 
-saveWorkbook(wb,here("output", year, "Shetland", paste0(year, "_attitudes_to_school_and_aspirations_formatted.xlsx")), overwrite = TRUE)
+saveWorkbook(wb,here("output", year, "Shetland", "Suppressed and formatted", paste0(year, "_attitudes_to_school_and_aspirations_formatted.xlsx")), overwrite = TRUE)
 
 
 
@@ -291,8 +309,6 @@ saveWorkbook(wb,here("output", year, "Shetland", paste0(year, "_attitudes_to_sch
 
 
 # To do
-# rename survey questions - might be easiest to collapse all column metadata into one file or make a master file?. For now I think read in all metadata and collapse
-# into one dataframe of just all the columns we need
 # re-order columns. prob easiest to set prefer not to say and not known last rather than list them all
 # add in columns if blank e.g. simd 1 in shetland
 

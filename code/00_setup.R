@@ -27,6 +27,8 @@ library(usethis)
 library(purrr)
 library(DBI)
 library(openxlsx)
+library(RtoSQLServer)
+library(glue)
 
 
 
@@ -39,6 +41,7 @@ source(here("functions", "new_folders_merged.R"))
 source(here("functions", "new_output_folders.R"))
 
 
+
 ### 3 - Set file path for raw data and output folders ----
 
 raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
@@ -46,9 +49,12 @@ raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Sur
 output_folder <- here("output")
 
 
+
 ### 4 - Set parameters ----
 
 year <- 2022
+
+pupil_census_year <- 2021
 
 all_las <- c(
   "Angus", "Clackmannanshire", "Dumfries & Galloway", "Dundee",
@@ -96,7 +102,6 @@ for (la in all_las){
 }
 
 new_output_folders(year, "National", output_folder)
-
 
 
 ### END OF SCRIPT ###

@@ -312,7 +312,7 @@ joined_data_removed <- joined_data_removed %>%
 
 write_xlsx(
   joined_data_removed,
-  file.path(raw_data_folder, year, "Merged", paste0("08_removed_records2.xlsx"))
+  file.path(raw_data_folder, year, "Merged", paste0("08_removed_records.xlsx"))
 )
 
 

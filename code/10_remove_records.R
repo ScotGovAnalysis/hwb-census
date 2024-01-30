@@ -248,6 +248,7 @@ removed_records <- removed_records %>%
 
 # Save excel file to output folder
 write_xlsx(
+  removed_records,
   here("output", year, paste0(year, "_records_removed.xlsx"))
 )
 

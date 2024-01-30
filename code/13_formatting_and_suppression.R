@@ -188,51 +188,64 @@ for (region_name in names(combined_data)) {
   }
 }
 
-# original_data <- combined_data$Angus
-
-a <- combined_data$National$stage
-b <- combined_data$Shetland$stage
 
 
-# If rows are missing from a tibble, add them in
-# This happens for smaller local authorities, e.g. Shetland, which may have no-one in that local authority choosing a certain response option
+### 4 - Add missing rows to dataframes ----
 
-# Extract the National list of dataframes
-national_list <- list(stage = combined_data$National$stage,
-                      sex = combined_data$National$sex,
-                      simd = combined_data$National$simd,
-                      urbrur6 = combined_data$National$urbrur6,
-                      ethnic_group = combined_data$National$ethnic_group,
-                      care_for_someone = combined_data$National$care_for_someone,
-                      long_term_condition = combined_data$National$long_term_condition
-)
-
-# Loop over each dataframe in the National list
-for (df_name in names(national_list)) {
-  # Get the dataframe from National list
-  national_df <- national_list[[df_name]]
+# Define the process_data function
+process_data <- function(national, la) {
+  # Identify rows in national that are not present in la
+  rows_to_add <- anti_join(national, la, by = c("Survey topic", "Survey question", "Response"))
   
-  # Loop over each row in the dataframe
-  for (i in 1:nrow(national_df)) {
-    # Extract the first three columns
-    row_key <- national_df[i, 1:3]
-    
-    # Check if the row exists in the respective dataframe
-    if (!(df_name %in% names(combined_data)) || 
-        is.null(combined_data[[df_name]])) {
-      combined_data[[df_name]] <- data.frame(matrix(0, ncol = ncol(national_df), nrow = 0))
-      colnames(combined_data[[df_name]]) <- colnames(national_df)
+  # Check if there are rows to add
+  if (nrow(rows_to_add) > 0) {
+    # Add "0" to other columns if they exist
+    for (col in setdiff(names(la), c("Survey topic", "Survey question", "Response"))) {
+      if (col %in% names(rows_to_add)) {
+        rows_to_add[[col]] <- "0"
+      }
     }
     
-    matching_row <- combined_data[[df_name]][combined_data[[df_name]][, 1] == row_key[1] & 
-                                               combined_data[[df_name]][, 2] == row_key[2] & 
-                                               combined_data[[df_name]][, 3] == row_key[3], ]
+    # Append the rows to la
+    la <- bind_rows(la, rows_to_add)
+  }
+  
+  # Reorder la based on the row indices of national
+  la_ordered <- la[match(
+    paste(national$`Survey topic`, national$`Survey question`, national$Response),
+    paste(la$`Survey topic`, la$`Survey question`, la$Response)
+  ), ]
+  
+  # Reorder columns to match national
+  common_cols <- intersect(names(national), names(la_ordered))
+  la_ordered <- la_ordered[, common_cols]
+  
+  return(la_ordered)
+}
+
+
+# Create rows_added_data to store the processed data
+rows_added_data <- list()
+
+# Include National dataframe in rows_added_data
+rows_added_data[["National"]] <- combined_data[["National"]]
+
+# Loop over each local authority (la) in all_las
+for (la in all_las) {
+  # Create a sublist in rows_added_data for each la
+  rows_added_data[[la]] <- list()
+  
+  # Loop over each dataframe in the current la
+  for (i in seq_along(combined_data[[la]])) {
+    name_la <- names(combined_data[[la]])[[i]]
     
-    # If no matching row is found, add a new row with 0s for other columns
-    if (nrow(matching_row) == 0) {
-      new_row <- c(row_key, rep(0, ncol(national_df) - 3))
-      combined_data[[df_name]] <- rbind(combined_data[[df_name]], new_row)
-    }
+    # Apply process_data to compare with the respective dataframe in National
+    processed_df <- process_data(combined_data[["National"]][[name_la]], combined_data[[la]][[i]])
+    
+    # Store the processed dataframe in the sublist of rows_added_data
+    # Preserve the name of the dataframe
+    name <- names(combined_data[[la]])[i]
+    rows_added_data[[la]][[name]] <- processed_df
   }
 }
 
@@ -241,15 +254,164 @@ for (df_name in names(national_list)) {
 
 
 
-### 4 - Perform data suppression ---
 
-## From here the Response column is getting deleted. Why???
+
+# Define the process_data function
+process_data2 <- function(national, la) {
+  # Identify rows in national that are not present in la
+  rows_to_add <- anti_join(national, la, by = c("Survey topic", "Survey question", "Response"))
+  
+  # Check if there are rows to add
+  if (nrow(rows_to_add) > 0) {
+    # Add "0" to other columns if they exist
+    for (col in setdiff(names(la), c("Survey topic", "Survey question", "Response"))) {
+      if (col %in% names(rows_to_add)) {
+        rows_to_add[[col]] <- "0"
+      }
+    }
+    
+    # Append the rows to la
+    la <- bind_rows(la, rows_to_add)
+  }
+  
+  # Reorder la based on the row indices of national
+  la_ordered <- la[match(
+    paste(national$`Survey topic`, national$`Survey question`, national$Response),
+    paste(la$`Survey topic`, la$`Survey question`, la$Response)
+  ), ]
+  
+  # Reorder columns to match national
+  common_cols <- intersect(names(national), names(la_ordered))
+  la_ordered <- la_ordered[, common_cols]
+  
+  return(la_ordered)
+}
+
+
+# Create rows_added_data2 to store the processed data
+rows_added_data2 <- list()
+
+# Include National dataframe in rows_added_data2
+rows_added_data2[["National"]] <- rows_added_data[["National"]]
+
+# Loop over each local authority (la) in all_las
+for (i1 in seq_along(rows_added_data))  {
+  # Get the name of the current list of data frames
+  name_i1 <- names(rows_added_data)[i1]
+  # Create a sublist in rows_added_data2 for each i1
+  rows_added_data2[[name_i1]] <- list()
+  
+  # Loop over each dataframe in the current i1
+  for (i2 in seq_along(rows_added_data[[i1]])) {
+    
+    # Apply process_data2 to compare with the respective dataframe in National
+    processed_df <- process_data2(rows_added_data[["National"]][["stage"]], rows_added_data[[i1]][[i2]])
+    
+    # Store the processed dataframe in the sublist of rows_added_data2
+    # Preserve the name of the dataframe
+    name <- names(rows_added_data[[i1]])[i2]
+    rows_added_data2[[i1]][[name]] <- processed_df
+    
+  }
+
+}
+
+
+test <- combined_data$Shetland$urbrur6
+
+
+
+
+
+
+
+##### Need to fix the different number of rows in different dataframes
+# Caused by carers analysis not in lt_illness, caring and urbrur6
+
+national <- rows_added_data$National$stage
+la <- rows_added_data$Shetland$urbrur6
+
+
+
+# Define the process_data function
+process_data2 <- function(national, la) {
+  # Identify rows in national that are not present in la
+  rows_to_add <- anti_join(national, la, by = c("Survey topic", "Survey question", "Response"))
+  
+  # Check if there are rows to add
+  if (nrow(rows_to_add) > 0) {
+    # Add "0" to other columns if they exist
+    for (col in setdiff(names(la), c("Survey topic", "Survey question", "Response"))) {
+      if (col %in% names(rows_to_add)) {
+        rows_to_add[[col]] <- "0"
+      }
+    }
+    
+    # Append the rows to la
+    la <- bind_rows(la, rows_to_add)
+  }
+  
+  # Reorder la based on the row indices of national
+  la_ordered <- la[match(
+    paste(national$`Survey topic`, national$`Survey question`, national$Response),
+    paste(la$`Survey topic`, la$`Survey question`, la$Response)
+  ), ]
+  
+  # Reorder columns to match national
+  common_cols <- intersect(names(national), names(la_ordered))
+  la_ordered <- la_ordered[, common_cols]
+  
+  return(la_ordered)
+}
+
+
+# Create rows_added_data2 to store the processed data
+rows_added_data2 <- list()
+
+# Include National dataframe in rows_added_data2
+rows_added_data2[["National"]] <- rows_added_data[["National"]]
+
+# Loop over each local authority (la) in all_las
+for (i1 in seq_along(rows_added_data))  {
+  # Get the name of the current list of data frames
+  name_i1 <- names(rows_added_data)[i1]
+  # Create a sublist in rows_added_data2 for each i1
+  rows_added_data2[[name_i1]] <- list()
+  
+  # Loop over each dataframe in the current i1
+  for (i2 in seq_along(rows_added_data[[i1]])) {
+    
+    # Apply process_data2 to compare with the respective dataframe in National
+    processed_df <- process_data2(rows_added_data[["National"]][["stage"]], rows_added_data[[i1]][[i2]])
+    
+    # Store the processed dataframe in the sublist of rows_added_data2
+    # Preserve the name of the dataframe
+    name <- names(rows_added_data[[i1]])[i2]
+    rows_added_data2[[i1]][[name]] <- processed_df
+    
+  }
+  
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+### 5 - Perform data suppression ---
 
 all_data_suppressed <- lapply(combined_data, perform_data_suppression)
 
 
 
-### 5 - Format data as dataframes ----
+### 6 - Format data as dataframes ----
 
 # all_data_suppressed <- perform_formatting(all_data_suppressed)
 
@@ -263,7 +425,7 @@ formatted_data <- lapply(all_data_suppressed, perform_formatting)
 
 
 
-### 5 - Build workbooks ----
+### 7 - Build workbooks ----
 
 # Create a list of workbooks dynamically for each la and topic
 workbook_list <- lapply(names(formatted_data), function(la) {
@@ -279,29 +441,69 @@ names(workbook_list) <- names(formatted_data)
 
 
 
-### 6 - Apply workbook formatting ----
+# works for this::
+# formatted_data <- formatted_data$Angus
+# wb <- buildWorkbook(formatted_data, gridLines = FALSE)
+# 
+# la <- "Angus"
+
+
+### 8 - Apply workbook formatting ----
 
 formatted_workbook_list <- list()
+# 
+# for (la_name in names(workbook_list)) {
+#  # la <- workbook_list[[la_name]]
+#   
+#   # for (sheet_name in names(la)) {
+#     workbook <- buildWorkbook(workbook_list[[la_name]], gridLines = FALSE)# [[sheet_name]]
+#     data <- formatted_data[[la_name]]# [[sheet_name]]
+#     
+#     result <- perform_workbook_formatting(workbook, formatted_data_sheet)
+#     
+#     formatted_workbook_list[[paste0(la_name)]] <- result
+#   # }
+# }
 
-for (county_name in names(workbook_list)) {
-  county <- workbook_list[[county_name]]
+# for (la in names(formatted_data)){
+#   data <- formatted_data[[la]]
+#   wb <- buildWorkbook(data, gridLines = FALSE)
+#   result <- perform_workbook_formatting(wb, data)
+#   formatted_workbook_list[[paste0(la)]] <- result
+#   
+# }
+
+# Loop through each element in formatted_data
+for (la in names(formatted_data)) {
+  cli_inform(paste("Processing:", la))
   
-  for (sheet_name in names(county)) {
-    workbook <- workbook_list[[county_name]][[sheet_name]]
-    formatted_data_sheet <- formatted_data[[county_name]][[sheet_name]]
-    
-    result <- perform_workbook_formatting(workbook, formatted_data_sheet)
-    
-    formatted_workbook_list[[paste0(county_name, "_", sheet_name)]] <- result
-  }
+  # Extract data for the current element
+  data <- formatted_data[[la]]
+  
+  # Build workbook
+  wb <- buildWorkbook(data, gridLines = FALSE)
+  
+  # Perform workbook formatting
+  result <- perform_workbook_formatting(wb, data)
+  
+  # Store the formatted workbook in the list
+  formatted_workbook_list[[paste0(la)]] <- result
 }
 
 
+ 
 
-### 7 - Save outputs as an excel file to Merged folder ----
+
+
+
+wb <- formatted_workbook_list$Shetland
+
+
+
+### 9 - Save outputs as an excel file to Merged folder ----
 
 # Saves the workbook as an excel sheet 
-saveWorkbook(wb,here("output", year, "Shetland", "Suppressed and formatted", paste0(year, "_attitudes_to_school_and_aspirations_formatted.xlsx")), overwrite = TRUE)
+saveWorkbook(wb,here("output", year, "Shetland", "Suppressed and formatted", paste0(year, "_attitudes_to_school_and_aspirations_formatted2.xlsx")), overwrite = TRUE)
 
 
 

@@ -73,15 +73,15 @@ local_authority_list <- list()
 for (la in all_las) {
   hwb_la <- hwb_analysis %>%
     filter(pc_la == la)
-  
+
   stage <- analysis_one_characteristic(hwb_la, pc_stage, care_for_someone, "care_for_someone", "cat_order_1")
   sex <- analysis_one_characteristic(hwb_la, Gender, care_for_someone, "care_for_someone", "cat_order_1")
   ethnic_group <- analysis_one_characteristic(hwb_la, EthnicBackground, care_for_someone, "care_for_someone", "cat_order_1")
   simd <- analysis_one_characteristic(hwb_la, SIMD2020v2_Quintile, care_for_someone, "care_for_someone", "cat_order_1")
-  
+
   la_carers_analysis <- list(stage, sex, ethnic_group, simd)
   names(la_carers_analysis) <- c("stage", "sex", "ethnic_group", "simd")
-  
+
   local_authority_list[[paste0(la, "_carers_analysis")]] <- la_carers_analysis
 }
 

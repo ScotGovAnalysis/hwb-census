@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Normal",
                  "Borderline or Abnormal")
@@ -40,7 +36,7 @@ cat_order_2 <- c("Close to average",
 
 
 
-### 3 - Create derived variable for SDQ scores ---
+### 3 - Create derived variable for SDQ scores ----
 
 # Identify columns that start with "sdq"
 sdq_columns <- grep("^sdq", names(hwb_analysis), value = TRUE)
@@ -170,7 +166,7 @@ hwb_analysis$'Prosocial score %' <- ifelse(
 
 
 
-### 4 - Define variables for analysis ---
+### 4 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("Total difficulties score % - three band scale", 
@@ -191,7 +187,7 @@ variables <- data.frame(
 
 
 
-### 5 - Perform analysis on selected variables ---
+### 5 - Perform analysis on selected variables ----
 
 # For national
 national_sdq <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -215,13 +211,13 @@ for (value in all_las) {
 # Save national
 write_xlsx(
   national_sdq,
-  here("output", year, "National", paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
+  here("output", year, "National", "Output", paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
+  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

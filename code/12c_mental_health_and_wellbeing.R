@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Strongly agree or Agree",
                  "Neither agree nor disagree",
@@ -61,7 +57,7 @@ cat_order_6 <- c("Problematic use",
 
 
 
-### 3 - Replace response values as per Measures for Inclusion in publication document ---
+### 3 - Replace response values as per Measures for Inclusion in publication document ----
 
 hwb_analysis[hwb_analysis == "Strongly agree"] <- "Strongly agree or Agree"
 hwb_analysis[hwb_analysis == "Agree"] <- "Strongly agree or Agree"
@@ -95,7 +91,7 @@ hwb_analysis[hwb_analysis == "About 7 hours or more a day"] <- "6 or more hours"
 
 
 
-### 4 - Split the questions time_social_media_weekdays and time_social_media_weekends into primary and secondary ---
+### 4 - Split the questions time_social_media_weekdays and time_social_media_weekends into primary and secondary ----
 # This is because those questions had different response options for primary and secondary pupils so they are not directly comparable
 
 hwb_analysis <- hwb_analysis %>%
@@ -111,7 +107,7 @@ hwb_analysis <- hwb_analysis %>%
 
 
 
-### 5 - Create derived variable for social media disorder ---
+### 5 - Create derived variable for social media disorder ----
 
 # Function to determine social media disorder based on row values
 get_social_media_disorder <- function(row) {
@@ -148,7 +144,7 @@ hwb_analysis$social_media_disorder <- apply(hwb_analysis[, grepl("^social_media_
 
 
 
-### 6 - Define variables for analysis ---
+### 6 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("life_is_just_right",
@@ -199,7 +195,7 @@ variables <- data.frame(
 
 
 
-### 7 - Perform analysis on selected variables ---
+### 7 - Perform analysis on selected variables ----
 
 # For national
 national_mental_health <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -215,6 +211,7 @@ for (value in all_las) {
   list_name <- paste0(value, "_mental_health")
   local_authority_list[[list_name]] <- result
 }
+
 
 
 ### 8 - Save combined_list as an excel file to Merged folder ----

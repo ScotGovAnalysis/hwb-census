@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Strongly agree or Agree",
                  "Neither agree nor disagree",
@@ -91,7 +87,7 @@ cat_order_11 <- c("Yes",
 
 
 
-### 3 - Replace response values as per Measures for Inclusion in publication document ---
+### 3 - Replace response values as per Measures for Inclusion in publication document ----
 
 hwb_analysis[hwb_analysis == "Strongly agree"] <- "Strongly agree or Agree"
 hwb_analysis[hwb_analysis == "Agree"] <- "Strongly agree or Agree"
@@ -100,7 +96,7 @@ hwb_analysis[hwb_analysis == "Disagree"] <- "Strongly disagree or Disagree"
 
 
 
-### 4 - Define variables for analysis ---
+### 4 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("my_area_feeling_safe", 
@@ -150,7 +146,7 @@ variables <- data.frame(
 
 
 
-### 5 - Perform analysis on selected variables ---
+### 5 - Perform analysis on selected variables ----
 
 # For national
 national_neighbourhood <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -253,13 +249,13 @@ local_authority_list <- map(local_authority_list, function(inner_list) {
 # Save national
 write_xlsx(
   national_neighbourhood,
-  here("output", year, "National", paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
+  here("output", year, "National", "Output", paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
+  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

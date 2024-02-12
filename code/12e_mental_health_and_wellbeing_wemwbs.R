@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority_wemwbs.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Create derived variable for average WEMWBS score ---
+### 2 - Create derived variable for average WEMWBS score ----
 
 # Identify columns that start with "wemwbs"
 wemwbs_columns <- grep("^wemwbs", names(hwb_analysis), value = TRUE)
@@ -58,14 +54,14 @@ hwb_analysis$total_wemwbs <- ifelse(
 
 
 
-### 3 - Define variables for analysis ---
+### 3 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("total_wemwbs"))
 
 
 
-### 4 - Perform analysis on selected variables ---
+### 4 - Perform analysis on selected variables ----
 
 # For national
 national_wemwbs <- perform_analysis_national_wemwbs(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -84,7 +80,7 @@ for (value in all_las) {
 
 
 
-### 5 - Convert tibbles to character datatype from double ---
+### 5 - Convert tibbles to character datatype from double ----
 
 # Function to convert columns to character data type
 convert_to_character <- function(df) {

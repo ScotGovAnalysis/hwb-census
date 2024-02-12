@@ -29,6 +29,7 @@ library(DBI)
 library(openxlsx)
 library(RtoSQLServer)
 library(glue)
+library(a11ytables)
 
 
 

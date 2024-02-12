@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Good or excellent",
                  "Poor or fair",
@@ -73,7 +69,7 @@ cat_order_8 <- c("6 hours or less",
 
 
 
-### 3 - Replace response values as per Measures for Inclusion in publication document ---
+### 3 - Replace response values as per Measures for Inclusion in publication document ----
 
 hwb_analysis$general_health[hwb_analysis$general_health == "Excellent"] <- "Good or excellent"
 hwb_analysis$general_health[hwb_analysis$general_health == "Good"] <- "Good or excellent"
@@ -135,7 +131,7 @@ hwb_analysis$frequency_physical_activity[hwb_analysis$frequency_physical_activit
 
 
 
-### 4 - Create derived variable for mean hours of sleep on a school night ---
+### 4 - Create derived variable for mean hours of sleep on a school night ----
 
 hwb_analysis <- hwb_analysis %>%
   mutate(avg_hours_sleep = case_when(
@@ -183,7 +179,7 @@ hwb_analysis <- hwb_analysis %>%
 
 
 
-### 5 - Define variables for analysis ---
+### 5 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("general_health",
@@ -214,7 +210,7 @@ variables <- data.frame(
 
 
 
-### 6 - Perform analysis on selected variables ---
+### 6 - Perform analysis on selected variables ----
 
 # For national
 national_physical_health <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -238,13 +234,13 @@ for (value in all_las) {
 # Save national
 write_xlsx(
   national_physical_health,
-  here("output", year, "National", paste0(year, "_physical_health.xlsx"))
+  here("output", year, "National", "Output", paste0(year, "_physical_health.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, paste0(year, "_physical_health.xlsx"))
+  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_physical_health.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

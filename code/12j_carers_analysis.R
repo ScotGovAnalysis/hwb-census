@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Yes",
                  "No",
@@ -38,7 +34,7 @@ cat_order_1 <- c("Yes",
 
 
 
-### 3 - Replace response values as per Measures for Inclusion in publication document ---
+### 3 - Replace response values as per Measures for Inclusion in publication document ----
 
 hwb_analysis$care_for_someone[hwb_analysis$care_for_someone == "Caring responsibilities"] <- "Yes"
 hwb_analysis$care_for_someone[hwb_analysis$care_for_someone == "No caring responsibilities"] <- "No"
@@ -46,7 +42,7 @@ hwb_analysis$care_for_someone[hwb_analysis$care_for_someone == "Prefer not to sa
 
 
 
-### 4 - Define variables for analysis ---
+### 4 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("care_for_someone"),
@@ -55,7 +51,7 @@ variables <- data.frame(
 
 
 
-### 5 - Perform analysis on selected variables ---
+### 5 - Perform analysis on selected variables ----
 
 # For national
 stage <- analysis_one_characteristic(hwb_analysis, pc_stage, care_for_someone, "care_for_someone", "cat_order_1")

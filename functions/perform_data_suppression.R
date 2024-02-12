@@ -181,21 +181,3 @@ perform_data_suppression <- function(original_data) {
   
   return(all_data_suppressed)
 }
-
-
-
-
-# 
-#  tt <- all_raw_data$Angus$`2022_experience_of_bullying`
-#  
-#  dd <- combined_data$Angus
-# 
-# c <- perform_data_suppression(combined_data$Angus)
-# d <- perform_data_suppression(combined_data$Clackmannanshire)
-# all_data_suppressed <- list(c, d)
-# 
-# ddd <- c$ethnic_group
-
-
-
-

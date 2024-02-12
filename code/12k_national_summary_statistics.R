@@ -28,47 +28,55 @@ source(here::here("lookups", "lut_simd.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
 ### 2 - Read in pupil census ----
 
-# Load and select required variables from latest pupil census table 
-myconn <- dbConnect(odbc::odbc(), "dbXed", UID="", PWD= "")
+# Construct the stages list for the IN clause
+sql_stages <- paste0(shQuote(all_stages, type = "sh"), collapse = ",")
 
-# Construct the placeholders for the IN clause
-placeholders <- paste(rep("?", length(all_stages)), collapse = ",")
+# Construct the SQL query
+query <- glue("SELECT ScottishCandidateNumber, 
+               StudentId,
+               LaCode,
+               OnRoll,
+               StudentStage,
+               Gender,
+               EthnicBackground,
+               UrbRur6,
+               Datazone2011
+               FROM sch.student_{pupil_census_year}
+               WHERE OnRoll = '1' AND
+               StudentStage IN ({sql_stages}) AND
+               SchoolFundingType IN ('2', '3')")
 
-# Construct the SQL query with parameterized IN clause
-query <- glue::glue("SELECT ScottishCandidateNumberN,
-                     StudentId,
-                     LaCode, 
-                     OnRoll,
-                     StudentStage,
-                     Gender,
-                     EthnicBackground,
-                     UrbRur6,
-                     Datazone2011
-                     FROM sch.student_{pupil_census_year}
-                     WHERE OnRoll = '1' AND
-                     StudentStage IN ({placeholders}) AND
-                     SchoolFundingType IN ('2', '3')")
-
-# Execute the query using parameterized inputs
-pupil_census <- dbGetQuery(myconn, query, params = all_stages)
+# Execute the query
+pupil_census <- execute_sql(
+  server = "s0855a\\dbXed",
+  database = "char_and_ref",
+  sql = query,
+  output = TRUE
+)
 
 
 
 ### 3 - Read in ASN and SIMD data and join to pupil census ----
 
-# Load and select required variables from the latest studentnaturesupport table (for ASN)
-asn_data <- dbGetQuery(myconn, paste(paste0("SELECT StudentId, Type FROM sch.studentneed_", studentnaturesupport_year),
-                                     "WHERE Type NOT IN ('05')"))
+# Construct the SQL query to get asn data
+query <- glue("SELECT StudentId, 
+               Type
+               FROM sch.studentneed_{studentnaturesupport_year}
+               WHERE Type NOT IN ('05')")
+
+# Execute the query
+asn_data <- execute_sql(
+  server = "s0855a\\dbXed",
+  database = "char_and_ref",
+  sql = query,
+  output = TRUE
+)
 
 # Remove duplicates from asn_data
 asn_data <- asn_data %>%
@@ -81,11 +89,15 @@ pupil_census <- left_join(pupil_census, asn_data, by = "StudentId")
 # Replace asn NA values with "No"
 pupil_census$asn[is.na(pupil_census$asn)] <- "No"
 
+
 # Load Data Zone - SIMD quintile lookup table (based on 2011 Data Zones - future version based on 2022 Census will become available soon)
+# THIS WILL NEED TO BE CHECKED FOR UPDATES EACH YEAR
 # (https://www.gov.scot/publications/scottish-index-of-multiple-deprivation-2020v2-data-zone-look-up/)
 # Only the "SIMD 2020v2 DZ lookup data" sheet from the workbook will be required
-dz_simd_filename <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/HWB Analysis/Documents & files required for analysis/data_zone_simd_for_r.csv"
-dz_simd <- read.csv(dz_simd_filename, header = TRUE) %>% 
+dz_simd <-
+  read.csv(here("external_datasets_required",
+                year,
+                "data_zone_simd_for_r.csv")) %>%
   select(DZ, SIMD2020v2_Quintile) # keep only Data Zone & SIMD quintile columns
 
 # Join dz_simd onto pupil_census

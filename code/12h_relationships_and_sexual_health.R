@@ -22,15 +22,11 @@ source(here::here("functions", "perform_analysis_local_authority.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx")
-
-# Read in dataframe
-hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
+hwb_analysis <- read_xlsx(file.path(raw_data_folder, year, "Merged", "09_joined_stages.xlsx"), sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Yes",
                  "No",
@@ -63,7 +59,7 @@ cat_order_5 <- c("Yes",
 
 
 
-### 3 - Replace response values as per Measures for Inclusion in publication document ---
+### 3 - Replace response values as per Measures for Inclusion in publication document ----
 
 hwb_analysis$sex_experience_type[hwb_analysis$sex_experience_type == "More intimate experiences (not sexual intercourse)"] <- "Some experiences but no sexual intercourse (e.g. touching intimately underneath clothes or without clothes on)"
 hwb_analysis$sex_experience_type[hwb_analysis$sex_experience_type == "Penetrative sex"] <- "Vaginal or anal sex"
@@ -71,7 +67,7 @@ hwb_analysis$sex_experience_type[hwb_analysis$sex_experience_type == "Sexual int
 
 
 
-### 4 - Define variables for analysis ---
+### 4 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("sex_boyfriend_girlfriend",
@@ -94,7 +90,7 @@ variables <- data.frame(
 
 
 
-### 5 - Perform analysis on selected variables ---
+### 5 - Perform analysis on selected variables ----
 
 # For national
 national_sexual_health <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -123,13 +119,13 @@ for (value in all_las) {
 # Save national
 write_xlsx(
   national_sexual_health,
-  here("output", year, "National", paste0(year, "_relationships_and_sexual_health.xlsx"))
+  here("output", year, "National", "Output", paste0(year, "_relationships_and_sexual_health.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, paste0(year, "_relationships_and_sexual_health.xlsx"))
+  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_relationships_and_sexual_health.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

@@ -30,7 +30,7 @@ hwb_analysis <- readxl::read_xlsx(file_path, sheet = 1)
 
 
 
-### 2 - Set row order of response categories ---
+### 2 - Set row order of response categories ----
 
 cat_order_1 <- c("Participated in leisure activity",
                  "Did not participate")
@@ -40,7 +40,7 @@ cat_order_2 <- c("Both fruit and vegetables at least once day",
 
 
 
-### 3 - Create derived variable for 'Participated in a positive leisure activity this year' ---
+### 3 - Create derived variable for 'Participated in a positive leisure activity this year' ----
 
 # Extract columns that begin with "positive_activities"
 positive_activities_cols <- grep("^positive_activities", names(hwb_analysis), value = TRUE)
@@ -63,7 +63,7 @@ hwb_analysis$'Participated in a positive leisure activity this year' <- apply(hw
 
 
 
-### 4 - Create derived variable for 'How often do you usually eat fruit and vegetables' ---
+### 4 - Create derived variable for 'How often do you usually eat fruit and vegetables' ----
 
 hwb_analysis$`How often do you usually eat fruit and vegetables` <- with(hwb_analysis, {
   ifelse(
@@ -87,7 +87,7 @@ hwb_analysis$`How often do you usually eat fruit and vegetables` <- with(hwb_ana
 
 
 
-### 5 - Define variables for analysis ---
+### 5 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("Participated in a positive leisure activity this year",
@@ -98,7 +98,7 @@ variables <- data.frame(
 
 
 
-### 6 - Perform analysis on selected variables ---
+### 6 - Perform analysis on selected variables ----
 
 # For national
 national_core_wellbeing_indicators <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
@@ -117,7 +117,7 @@ for (value in all_las) {
 
 
 
-### 7 - Read in other core wellbeing indicators that were calculated in earlier scripts ---
+### 7 - Read in other core wellbeing indicators that were calculated in earlier scripts ----
 
 all_topics <- c(
   "attitudes_to_school_and_aspirations", "experience_of_bullying", "mental_health_and_wellbeing",
@@ -176,7 +176,7 @@ all_las_other_topics <- set_names(
 
 
 
-### 8 - Join on other core wellbeing indicators that were calculated in earlier scripts ---
+### 8 - Join on other core wellbeing indicators that were calculated in earlier scripts ----
 
 # Function to filter and bind rows based on specified conditions for national
 bind_rows_based_on_condition <- function(topic_name, survey_question) {

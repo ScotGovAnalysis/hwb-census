@@ -19,31 +19,34 @@ source(here::here("code", "00_setup.R"))
 
 ### 1 - Read in unvalidated rows ----
 
-# Read in merged data for each stage and store as a list of data frames
-# Define the path to your Excel file and the sheet names
-file_path <- file.path(raw_data_folder, year, "Merged", "04_merged_data.xlsx")
-
-# Read in all sheets into a list of tibbles with names
+# Read in merged data for each stage and store as a list of dataframes for HWB
 unvalidated_rows <- set_names(
   map(
     all_stages,
-    ~ read_xlsx(file_path, sheet = .x)
+    ~ read_xlsx(file.path(raw_data_folder, year, "Merged", "04_merged_data.xlsx"), sheet = .x)
   ),
   all_stages
 )
+
+# Read in merged data and store as a dataframe for substance use
+unvalidated_rows_su <- read_xlsx(file.path(raw_data_folder, year, "Merged", "04_merged_data_substance_use.xlsx"))
 
 
 
 ### 2 - Replace all "-"s with "NA"s ----
 
+# For HWB
 validated_rows <- lapply(unvalidated_rows, function(tibble) {
   tibble[tibble == "-"] <- NA
   return(tibble)
 })
 
+# For substance use
+validated_rows_su <- data.frame(lapply(unvalidated_rows_su, function(x) ifelse(x == "-", NA, x)))
 
 
-### 3 - Replace responses which occur in multiple questions for multiple stages ----
+
+### 3 - Replace responses which occur in multiple questions for multiple stages for HWB ----
 
 # Replace "Neither agree not disagree" with "Neither agree nor disagree" in every tibble
 # Replace "Prefer Not to Say" with "Prefer not to say" in every tibble
@@ -65,7 +68,7 @@ validated_rows <- lapply(validated_rows, function(tibble) {
 
 
 
-### 4 - For P3 the question frequency_physical_activity ----
+### 4 - For P3 the question frequency_physical_activity for HWB ----
 
 # Replace "At least once a month but not every week" with "Once a month"
 validated_rows$S3 <- validated_rows$S3 %>%
@@ -74,7 +77,7 @@ validated_rows$S3 <- validated_rows$S3 %>%
 
 
 
-### 5 - For P5, P6, P7 the question frequency_feeling_lonely ----
+### 5 - For P5, P6, P7 the question frequency_feeling_lonely for HWB ----
 
 # Replace "Often" with "Often or always" for P5 & P6
 validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("P5", "P6"), ~ .x %>%
@@ -93,7 +96,7 @@ validated_rows$P7 <- validated_rows$P7 %>%
 
 
 
-### 6 - For S4-S6 replace "Doesn't apply to me" with NA for the following questions ----
+### 6 - For S4-S6 replace "Doesn't apply to me" with NA for the following questions for HWB ----
 # sex_boyfriend_girlfriend_feel_safe
 # sex_boyfriend_girlfriend_encourages
 # sex_boyfriend_girlfriend_checks
@@ -109,7 +112,7 @@ validated_rows <-
   )
 
 
-### 7 - For S4-S6 replace responses to sex_experience_type ----
+### 7 - For S4-S6 replace responses to sex_experience_type for HWB ----
 
 # Replace "Sexual intercourse" with "Vaginal or anal sex"
 validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S4", "S5", "S6"), ~ .x %>%
@@ -135,11 +138,106 @@ validated_rows <- map_if(validated_rows, names(validated_rows) %in% c("S5"), ~ .
 
 
 
-### 8 - Save as excel file to Merged folder ----
+### 8 - Replace response options for column simd_decile for substance use ----
 
+# Dundee, Renfrewshire, North Ayrshire, Stirling, Moray, Scottish Borders, Shetland, Edinburgh City collected vigintiles, instead of deciles, so we need to convert vigintiles 
+# Dumfries & Galloway, South Ayrshire, Angus, Clackmannanshire and Glasgow collected deciles
+# Falkirk, Perth & Kinross and East Renfrewshire did not collected SIMD
+# However, analysis is published by SIMD quintile so we will convert all deciles and vigintiles to quintiles now
+
+# Define the vigintile rules
+vigintile_rules <- function(x) {
+  ifelse(
+    x %in% c("1", "2", "3", "4"), "1",
+    ifelse(
+      x %in% c("5", "6", "7", "8"), "2",
+      ifelse(
+        x %in% c("9", "10", "11", "12"), "3",
+        ifelse(
+          x %in% c("13", "14", "15", "16"), "4",
+          ifelse(
+            x %in% c("17", "18", "19", "20"), "5",
+            NA
+          )
+        )
+      )
+    )
+  )
+}
+
+# Apply the vigintile rules to the simd_decile column based on the LA
+validated_rows_su <- validated_rows_su %>%
+  mutate(
+    simd_decile = ifelse(
+      hwb_la %in% c("Dundee", "Renfrewshire", "North Ayrshire", "Stirling", "Moray", "Scottish Borders", "Shetland", "Edinburgh City"),
+      vigintile_rules(simd_decile),
+      simd_decile
+    )
+  )
+
+# Define the decile rules
+decile_rules <- function(x) {
+  ifelse(
+    x %in% c("1", "2"), "1",
+    ifelse(
+      x %in% c("3", "4"), "2",
+      ifelse(
+        x %in% c("5", "6"), "3",
+        ifelse(
+          x %in% c("7", "8"), "4",
+          ifelse(
+            x %in% c("9", "10"), "5",
+            NA
+          )
+        )
+      )
+    )
+  )
+}
+
+# Apply the decile rules to the simd_decile column based on the LA
+validated_rows_su <- validated_rows_su %>%
+  mutate(
+    simd_decile = ifelse(
+      hwb_la %in% c("Dumfries & Galloway", "South Ayrshire", "Angus", "Clackmannanshire", "Glasgow"),
+      decile_rules(simd_decile),
+      simd_decile
+    )
+  )
+
+
+
+### 9 - Replace response options for column cigarettes_daily_number for substance use ----
+
+validated_rows_su <- validated_rows_su %>%
+  mutate(cigarettes_daily_number = case_when(
+    cigarettes_daily_number == "01-Feb" ~ "1-2",
+    cigarettes_daily_number == "03-Apr" ~ "3-4",
+    cigarettes_daily_number == "05-Jun" ~ "5-6",
+    cigarettes_daily_number == "07-Aug" ~ "7-8",
+    cigarettes_daily_number == "09-Oct" ~ "9-10",
+    cigarettes_daily_number == "44654" ~ NA_character_,
+    cigarettes_daily_number == "44593" ~ NA_character_,
+    cigarettes_daily_number == "44843" ~ NA_character_,
+    cigarettes_daily_number == "44717" ~ NA_character_,
+    cigarettes_daily_number == "44780" ~ NA_character_,
+    TRUE ~ cigarettes_daily_number
+  ))
+
+
+
+### 10 - Save as excel file to Merged folder ----
+
+# Save excel file to merged folder for HWB
 write_xlsx(
   validated_rows,
   file.path(raw_data_folder, year, "Merged", paste0("05_validated_rows.xlsx"))
+)
+
+# Save excel file to merged folder for substance use
+write_xlsx(
+  validated_rows_su,
+  file.path(raw_data_folder, year, "Merged", paste0("05_validated_rows_substance_use.xlsx"))
 )
 
 

@@ -7,6 +7,7 @@
 # Version of R - 4.2.2
 #
 # Description - Splits the column school_name into two columns, school_name and seed_code
+# For HWB data only (not substance use as the SU survey didn't collect school_name)
 
 #########################################################################
 

@@ -19,11 +19,11 @@ check_headers <- function(year, la, stage, subfolder, exp_headers, q_pattern) {
   
   # Read in raw data to get headers and first row (for possible second header)
   raw <- read_raw_data(year, la, stage, subfolder, headers_only = TRUE)
-  
+
   # Get number of header rows
-  # If the first column answer is NA or the first header is ..1,
+  # If the first column answer is NA or the first header is ..1 or the first row contains a q_pattern
   # then there are likely to be two header rows
-  n_headers <- if_else(is.na(raw[1, 1]) | names(raw)[1] == "...1", 2, 1)
+  n_headers <- if_else(is.na(raw[1, 1]) | names(raw)[1] == "...1" | grepl(q_pattern, raw[1, 1]), 2, 1)
   
   # Restructure data to get columns of headers
   raw_headers <- 

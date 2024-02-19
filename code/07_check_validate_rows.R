@@ -11,6 +11,7 @@
 # and the metadata
 #########################################################################
 
+
 ### 0 - Setup ----
 
 source(here::here("code", "00_setup.R"))
@@ -19,7 +20,7 @@ source(here::here("code", "00_setup.R"))
 
 ### 1 - Expected rows ----
 
-# Read in expected rows for each stage and store as a list of data frames
+# Read in expected rows for each stage and store as a list of data frames for HWB data
 exp_rows <- 
   map(
     set_names(all_stages),
@@ -34,20 +35,27 @@ exp_rows <-
 exp_rows <- map(exp_rows, ~ .x %>% 
                   mutate_all(~ gsub("\u00A0", " ", .)))
 
+# Read in expected rows for substance use
+exp_rows_su <- 
+  read_xlsx(here(
+    "metadata", 
+    year,
+    paste0("hwb_metadata_s4_su_row_names.xlsx")
+  ))
+
+# Replace all non-breaking spaces (NBSP with regular spaces)
+exp_rows_su <- exp_rows_su %>%
+  mutate_all(~ gsub("\u00A0", " ", .))
+
 
 
 ### 2 - Read in data ----
 
-# Read in merged data for each stage and store as a list of data frames
-
-# Define the path to your Excel file and the sheet names
-file_path <- file.path(raw_data_folder, year, "Merged", "05_validated_rows.xlsx")
-
-# Read in all sheets into a list of tibbles with names
+# Read in HWB merged data for each stage and store as a list of data frames
 act_rows <- set_names(
   map(
     all_stages,
-    ~ read_xlsx(file_path, sheet = .x)
+    ~ read_xlsx(file.path(raw_data_folder, year, "Merged", "05_validated_rows.xlsx"), sheet = .x)
   ),
   all_stages
 )
@@ -66,6 +74,11 @@ remove_columns <- function(tibble) {
 # Use lapply to apply the function to each tibble in the list
 act_rows <- lapply(act_rows, remove_columns)
 
+# Read in substance use merged data
+act_rows_su <- read_xlsx(file.path(raw_data_folder, year, "Merged", "05_validated_rows_substance_use.xlsx")) %>% 
+  # Replace all non-breaking spaces (NBSP with regular spaces)
+  mutate_all(~ gsub("\u00A0", " ", .))
+
 
 
 ### 3 - Replace all "-" values in act_rows with NA ----
@@ -75,12 +88,15 @@ replace_dash_with_na <- function(tib) {
   tib %>% mutate_all(~ ifelse(. == "-", NA, .))
 }
 
-# Use map to apply the function to each tibble in the list
+# Use map to apply the function to each tibble in the HWB list
 act_rows <- map(act_rows, replace_dash_with_na)
 
+# Replace "-" with NA in all columns of substance use dataframe
+act_rows_su[act_rows_su == "-"] <- NA
 
 
-### 4 - Compare act_rows to exp_rows ----
+
+### 4 - Compare act_rows to exp_rows for HWB data ----
 
 # This code loops through the tibbles in act_rows, finds the corresponding tibble 
 # in exp_rows by name, and then calculates the unique values for each column. 
@@ -144,14 +160,44 @@ list_of_dataframes <- lapply(unexp_rows_filtered, list_to_dataframe)
 
 
 
-### 5 - Save row validation summary to output folder ----
+### 5 - Compare act_rows_su to exp_rows_su for substance use data ----
 
-# Save excel file to output folder
+# This code loops through the tibbles in act_rows, finds the corresponding tibble 
+# in exp_rows by name, and then calculates the unique values for each column. 
+# The resulting tibbles are stored in the unexp_rows list with the same names.
+
+# Initialize an empty list to store the result
+unexp_rows_su <- list()
+
+# Loop through the columns of the tibble
+for (col_name in colnames(exp_rows_su)) {
+  # Calculate unique values that are in act_rows but not in exp_rows for each column
+  unique_col <- setdiff(act_rows_su[[col_name]], exp_rows_su[[col_name]])
+  unexp_rows_su[[col_name]] <- unique_col
+}
+
+# Use the function remove_zero_length to filter out zero-length vectors
+# (i.e. questions which didn't have any unexpected response options)
+unexp_rows_su_filtered <- remove_zero_length(unexp_rows_su)
+
+# Use the function list_to_dataframe to convert the list unexp_rows_su_filtered into a dataframe
+unexp_rows_su_filtered_df <- list_to_dataframe(unexp_rows_su_filtered)
+
+
+
+### 6 - Save row validation summary to output folder ----
+
+# Save excel file to output folder for HWB
 write_xlsx(
   list_of_dataframes, 
   here("output", year, paste0(year, "_checks_row-validation.xlsx"))
 )
 
+# Save excel file to output folder for substance use
+write_xlsx(
+  unexp_rows_su_filtered_df, 
+  here("output", year, paste0(year, "_checks_row-validation_substance_use.xlsx"))
+)
 
 
 ### END OF SCRIPT ###

@@ -11,6 +11,7 @@
 # and the metadata
 #########################################################################
 
+
 ### 0 - Setup ----
 
 source(here::here("code", "00_setup.R"))
@@ -19,16 +20,11 @@ source(here::here("code", "00_setup.R"))
 
 ### 1 - Expected rows ----
 
-# Read in expected rows for each stage and store as a list of data frames
-exp_rows <- 
-  map(
-    set_names(all_stages),
-    ~ read_xlsx(here(
-      "metadata", 
-      year,
-      paste0("hwb_metadata_", tolower(.x), "_row_names.xlsx")
-    ))
-  ) 
+# Read in expected rows for each survey and store as a list of data frames
+exp_rows <- map(
+  survey_names,
+  ~ read_xlsx(here("metadata", year, paste0("hwb_metadata_", tolower(.x), "_row_names.xlsx")))
+)
 
 # Replace all non-breaking spaces (NBSP with regular spaces)
 exp_rows <- map(exp_rows, ~ .x %>% 
@@ -38,33 +34,28 @@ exp_rows <- map(exp_rows, ~ .x %>%
 
 ### 2 - Read in data ----
 
-# Read in merged data for each stage and store as a list of data frames
-
-# Define the path to your Excel file and the sheet names
-file_path <- file.path(raw_data_folder, year, "Merged", "05_validated_rows.xlsx")
-
-# Read in all sheets into a list of tibbles with names
-act_rows <- set_names(
+# Read in merged data for each survey and store as a list of data frames
+act_rows <- 
   map(
-    all_stages,
-    ~ read_xlsx(file_path, sheet = .x)
-  ),
-  all_stages
-)
+    survey_names,
+    ~ read_xlsx(file.path(raw_data_folder, year, "Merged", "05_validated_rows.xlsx"), sheet = .x)
+  )
 
 # Replace all non-breaking spaces (NBSP with regular spaces)
 act_rows <- map(act_rows, ~ .x %>% 
                   mutate_all(~ gsub("\u00A0", " ", .)))
 
-
 # Remove columns "scn" and "school_name"
-# Define a function to remove columns from a tibble
-remove_columns <- function(tibble) {
-  tibble %>% select(-school_name, -scn)
-}
-
-# Use lapply to apply the function to each tibble in the list
-act_rows <- lapply(act_rows, remove_columns)
+act_rows <- map(act_rows, ~ {
+  if ("school_name" %in% names(.)) {
+    . <- select(., -school_name)
+  }
+  if ("scn" %in% names(.)) {
+    . <- select(., -scn)
+  }
+  . <- mutate_all(., ~ gsub("\u00A0", " ", .)) # Apply gsub to all columns
+  return(.)
+})
 
 
 

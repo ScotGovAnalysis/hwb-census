@@ -1,4 +1,4 @@
-perform_analysis_local_authority <- function(hwb_analysis, one_characteristics, stage_and_characteristics, variables) {
+perform_analysis_local_authority <- function(hwb_analysis, variables) {
   
   # Filtering hwb_analysis_caring
   hwb_analysis_caring <- hwb_analysis %>%
@@ -16,7 +16,8 @@ perform_analysis_local_authority <- function(hwb_analysis, one_characteristics, 
     var_result <- lapply(1:nrow(variables), function(i) {
       var_name <- variables$variable[i]
       cat_order <- variables$cat_order[i]
-      analysis_one_characteristic(get(dataset), !!as.name(var), !!as.name(var_name), var_name, cat_order)
+      analysis_one_characteristic(get(dataset), !!as.name(var), !!as.name(var_name), var_name, cat_order) %>%
+        mutate(across(everything(), as.character)) # Convert all columns to character
     }) %>%
       bind_rows()
     

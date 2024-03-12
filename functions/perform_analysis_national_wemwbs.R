@@ -1,5 +1,5 @@
 
-perform_analysis_national_wemwbs <- function(hwb_analysis, one_characteristics, stage_and_characteristics, variables) {
+perform_analysis_national_wemwbs <- function(hwb_analysis, variables) {
   
   # Filtering hwb_analysis_caring
   hwb_analysis_caring <- hwb_analysis %>%

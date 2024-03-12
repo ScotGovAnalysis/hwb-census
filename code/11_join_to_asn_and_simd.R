@@ -6,7 +6,8 @@
 # Written/run on - RStudio Desktop
 # Version of R - 4.2.2
 #
-# Description - Joins data onto ASN and SIMD data and applies lookups ready for analysis.
+# Description - Joins HWB data only (not substance use) onto ASN and SIMD 
+# data and applies lookups ready for analysis.
 #########################################################################
 
 

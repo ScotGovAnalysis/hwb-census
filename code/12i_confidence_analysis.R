@@ -9,6 +9,7 @@
 # Description - Analyses data for confidence questions
 #########################################################################
 
+
 ### 0 - Setup ----
 
 source(here::here("code", "00_setup.R"))
@@ -62,7 +63,7 @@ variables <- data.frame(
 ### 5 - Perform analysis on selected variables ----
 
 # For national
-national_confidence_analysis <- perform_analysis_national(hwb_analysis, one_characteristics, stage_and_characteristics, variables)
+national_confidence_analysis <- perform_analysis_national(hwb_analysis, variables)
 
 # For each local authority
 local_authority_list <- list()
@@ -70,7 +71,7 @@ local_authority_list <- list()
 for (value in all_las) {
   cat("Processing local authority:", value, "\n")
   filtered_data <- hwb_analysis[hwb_analysis$pc_la == value, ]
-  result <- perform_analysis_local_authority(filtered_data, one_characteristics, stage_and_characteristics, variables)
+  result <- perform_analysis_local_authority(filtered_data, variables)
   # Store the result with a dynamic name, e.g. Angus_confidence_analysis
   list_name <- paste0(value, "_confidence_analysis")
   local_authority_list[[list_name]] <- result

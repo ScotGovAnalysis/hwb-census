@@ -1,12 +1,12 @@
 #########################################################################
-# Name of file - 13_formatting_and_suppression.R
+# Name of file - 13b_formatting_and_suppression_su.R
 # Health and Wellbeing (HWB) Census 
 #
 # Type - Reproducible Analytical Pipeline (RAP)
 # Written/run on - RStudio Desktop
 # Version of R - 4.2.2
 #
-# Description - Formats and suppresses tables for publication
+# Description - Formats and suppresses tables for publication for substance use data
 #########################################################################
 
 
@@ -22,12 +22,13 @@ source(here::here("functions", "perform_formatting.R"))
 
 ### 1 - Read in raw data ----
 
+# Define function to read in substance use files
 read_excel_files <- function(directory) {
   excel_files <- list.files(path = directory, pattern = "\\.xlsx$", full.names = TRUE)
   raw_data <- list()
   
   for (file in excel_files) {
-    if (!grepl("core_wellbeing_indicators", file)) {  # Check if the file name contains "core_wellbeing_indicators"
+    if (grepl("substance_use", file)) {  # Check if the file name contains "substance_use"
       cat("Reading file:", file, "\n")
       
       file_name <- tools::file_path_sans_ext(basename(file))
@@ -35,12 +36,13 @@ read_excel_files <- function(directory) {
       sheet_data <- list()
       
       for (sheet in sheets) {
+        # Read each sheet directly as a tibble and store it in the list with sheet name as key
         sheet_data[[sheet]] <- readxl::read_excel(file, sheet = sheet)
       }
       
       raw_data[[file_name]] <- sheet_data
     } else {
-      cat("Skipping file containing 'core_wellbeing_indicators':", file, "\n")
+      cat("Skipping file not containing 'substance_use':", file, "\n")
     }
   }
   
@@ -79,7 +81,7 @@ all_raw_data[["National"]] <- national_raw_data
 survey_question_metadata <-
   read_xlsx(here("metadata",
                  year,
-                 "hwb_metadata_survey_questions_for_publication.xlsx"))
+                 "hwb_metadata_survey_questions_for_publication_su.xlsx"))
 
 
 
@@ -109,37 +111,24 @@ for (region_name in names(all_raw_data)) {
   }
 }
 
-# Loop through each top-level list in national_raw_data
-for (topic_name in names(national_raw_data)) {
-  topic <- national_raw_data[[topic_name]]
-  
-  # Check if topic is a list
-  if (is.list(topic)) {
-    # Add 'Survey topic' column to each tibble in the sublist
-    national_raw_data[[topic_name]] <- add_survey_topic_column(topic, topic_name)
-  }
-}
 
 # Function to row bind tibbles with the same name
 bind_same_name <- function(lst) {
   # Get unique names of tibbles
   tibble_names <- names(lst[[1]])
-
+  
   # Row bind tibbles with the same name, storing the result in a named list
   tibble_list <- map(tibble_names, ~ map_dfr(lst, .x))
-
+  
   # Name the list elements after the original tibble names
   names(tibble_list) <- tibble_names
-
+  
   # Return the row binded tibbles in a named list
   return(tibble_list)
 }
 
 # Apply bind_same_name function to each sub-list in all_raw_data
 combined_data_las <- map(all_raw_data, bind_same_name)
-
-# Apply bind_same_name function to national_raw_data
-combined_data_national <- bind_same_name(national_raw_data)
 
 
 # Function to clean the 'Survey topic' values from "2022_attitudes_to_school_and_aspirations" to "Attitudes to School and Aspirations"
@@ -148,22 +137,22 @@ clean_survey_topic <- function(topic_name) {
   cleaned_topic <- gsub("^\\d+_", "", topic_name)  # Remove leading numeric characters followed by "_"
   cleaned_topic <- gsub("_", " ", cleaned_topic)  # Replace remaining "_" with " "
   cleaned_topic <- tools::toTitleCase(cleaned_topic)  # Capitalize the first letter of each word
-
+  
   # Capitalize specific strings
   cleaned_topic <- gsub("\\bsdq\\b", "SDQ", cleaned_topic, ignore.case = TRUE)
   cleaned_topic <- gsub("\\bwemwbs\\b", "WEMWBS", cleaned_topic, ignore.case = TRUE)
-
+  
   cleaned_topic
 }
 
 # Loop through each top-level list in combined_data_las
 for (region_name in names(combined_data_las)) {
   region <- combined_data_las[[region_name]]
-
+  
   # Loop through sublists within each top-level list
   for (sublist_name in names(region)) {
     sublist <- region[[sublist_name]]
-
+    
     # Check if sublist is a list
     if (is.list(sublist)) {
       # Clean up the 'Survey topic' column values
@@ -172,43 +161,40 @@ for (region_name in names(combined_data_las)) {
   }
 }
 
-# Loop through each top-level list in combined_data_national
-for (topic_name in names(combined_data_national)) {
-  topic <- combined_data_national[[topic_name]]
-    
-    # Check if sublist is a list
-    if (is.list(sublist)) {
-      # Clean up the 'Survey topic' column values
-      combined_data_national[[topic_name]][['Survey topic']] <- clean_survey_topic(combined_data_national[[topic_name]][['Survey topic']])
-    }
+
+# Function to replace NA with "-" or "0" based on condition
+replace_NA <- function(df) {
+  df[] <- lapply(df, function(x) {
+    ifelse(is.na(x) & df$Response == "Total", "0", ifelse(is.na(x), "-", x))
+  })
+  return(df)
 }
+
+# Applying the function to each dataframe in each list
+combined_data_las <- lapply(combined_data_las, function(lst) {
+  lapply(lst, replace_NA)
+})
 
 
 
 ### 4 - Perform data suppression ----
 
-# For local authorities
+# For local authorities and national
 las_suppressed <- lapply(combined_data_las, perform_data_suppression)
-
-# For national
-national_suppressed <- perform_data_suppression(combined_data_national)
 
 
 
 ### 5 - Format data as dataframes ----
 
-# For local authorities
+# For local authorities and national
 formatted_data_las <- lapply(las_suppressed, perform_formatting)
-
-# For national
-formatted_data_national <- perform_formatting(national_suppressed)
 
 
 
 ### 6 - Produce a11ytables template and convert to workbook ----
 
 cover_list <- list(
-   "Summary Statistics for Health and Wellbeing Census 2021-22" = 
+  "Summary Statistics for Health and Wellbeing Census 2021-22" = 
     c("This spreadsheet contains summary statistics for the data collected as part of the Health and Wellbeing Census:", 
       "[Health and Wellbeing Census - gov.scot (www.gov.scot)](https://www.gov.scot/publications/health-and-wellbeing-census-2/)",
       "The statistics presented are experimental statistics.",
@@ -216,7 +202,7 @@ cover_list <- list(
       "This spreadsheet contains a range of survey question items. It gives breakdowns by a variety of pupil characteristics including sex, ethnic group, urban rural classificiation, Scottish Index of Multiple Deprivation (SIMD), long-term health condition and caring responsibilities.",
       "For commentary and background notes on these statistics, please refer to the main publication website:",
       "[Health and Wellbeing Census Scotland 2021-2022](https://www.gov.scot/publications/health-and-wellbeing-census-scotland-2021-22/)"
-      ),
+    ),
   "Participating Local Authorities" = "The following local authority councils participated and provided data for this publication: Angus, Clackmannanshire, Dumfries & Galloway, Dundee, East Renfrewshire, Edinburgh City, Falkirk, Glasgow, Moray, North Ayrshire, Perth & Kinross, Renfrewshire, Scottish Borders, Shetland, South Ayrshire and Stirling.",
   "Publication dates" = "The data tables in this spreadsheet were originally published at 9:30am on 23rd May 2023.",
   "Note on the impact of COVID-19" = "The impact of Covid-19 on schools and education has been significant, and schools have responded by putting in place different ways of working over the changing landscape since early 2020. This will affect the data and needs to be taken into account in understanding and using the results. The questions are designed to capture children and young people’s responses at the time of data collection (October 2021 – June 2022).",
@@ -286,12 +272,12 @@ notes_la_df <- data.frame(
                   "This question was asked of S1 - S6, with the response options None at all / About half an hour	 / About 1 hour a day / About 2 hours a day / About 3 hours a day / About 4 hours a day / About 5 hours a day / About 6 hours a day / About 7 hours or more a day.",
                   "This is calculated from the question \"During the past year, have you... regularly found that you can’t think of anything else but the moment that you will be able to use social media again? / ...regularly felt dissatisfied because you wanted to spend more time on social media? / ...often felt bad when you could not use social media? / ...tried to spend less time on social media but failed? / ...regularly neglected other activities (e.g. hobbies, sport) because you wanted to use social media? / ...regularly had arguments with others because of your social media use? / ...regularly lied to your parents or friends about the amount of time you spend on social media? / ...often used social media to escape from negative feelings? / ...had serious conflict with your parents, brother(s) or sister(s) because of your social media use? (No / Yes)\". \n Each item responded to with 'yes' scores a value of 1, 'no' responses score 0. \n Problematic use is classified as responding ‘yes’ to at least 6 of the 9 items. \n Mean score can be calculated across the cohort, for LA and national level.",
                   "The \"Not known\" category in this breakdown consists of \"Prefer not to say\" responses and those where no response was recorded for the long-term health condition/caring responsibility question. The grouping of these records was applied in order to avoid high levels of suppression of data."
-                  ),
+  ),
   "Relevant hyperlinks (where appropriate)" = c("More information on the Pupil Census",
                                                 "More information on the urban rural classification 2016",
                                                 "More information on the Scottish Index of Multiple Deprivation (SIMD)",
                                                 rep("", 10)
-                                                ),
+  ),
   "url" = c("https://www.gov.scot/publications/pupil-census-supplementary-statistics/",
             "https://www.gov.scot/publications/scottish-government-urban-rural-classification-2016/",
             "https://www.gov.scot/collections/scottish-index-of-multiple-deprivation-2020/",
@@ -335,7 +321,6 @@ notes_national_df <- data.frame(
 ### 7 - Create ally_tables ----
 
 # For each local authority 
-
 las_workbooks <- list()
 
 for (la in all_las) {
@@ -383,23 +368,23 @@ for (la in all_las) {
 
 
 # For national
-
-table_1 <- formatted_data_national$stage
-table_2 <- formatted_data_national$la
-table_3 <- formatted_data_national$sex
-table_4 <- formatted_data_national$stage_and_sex
-table_5 <- formatted_data_national$simd
-table_6 <- formatted_data_national$stage_and_simd
-table_7 <- formatted_data_national$urbrur6
-table_8 <- formatted_data_national$stage_and_urbrur6
-table_9 <- formatted_data_national$ethnic_group
-table_10 <- formatted_data_national$stage_and_ethnic_group
-table_11 <- formatted_data_national$asn
-table_12 <- formatted_data_national$stage_and_asn
-table_13 <- formatted_data_national$care_for_someone  
-table_14 <- formatted_data_national$stage_and_care_for_someone  
-table_15 <- formatted_data_national$long_term_condition
-table_16 <- formatted_data_national$stage_and_long_term_condition
+## Resume here monday
+table_1 <- formatted_data_las$National$stage
+table_2 <- formatted_data_las$National$la
+table_3 <- formatted_data_las$National$sex
+table_4 <- formatted_data_las$National$stage_and_sex
+table_5 <- formatted_data_las$National$simd
+table_6 <- formatted_data_las$National$stage_and_simd
+table_7 <- formatted_data_las$National$urbrur6
+table_8 <- formatted_data_las$National$stage_and_urbrur6
+table_9 <- formatted_data_las$National$ethnic_group
+table_10 <- formatted_data_las$National$stage_and_ethnic_group
+table_11 <- formatted_data_las$National$asn
+table_12 <- formatted_data_las$National$stage_and_asn
+table_13 <- formatted_data_las$National$care_for_someone  
+table_14 <- formatted_data_las$National$stage_and_care_for_someone  
+table_15 <- formatted_data_las$National$long_term_condition
+table_16 <- formatted_data_las$National$stage_and_long_term_condition
 
 national_a11ytable <- 
   a11ytables::create_a11ytable(
@@ -450,7 +435,7 @@ national_a11ytable <-
     tables = list(cover_list, contents_national_df, notes_national_df, table_1, table_2, table_3, table_4, table_5, table_6, table_7, 
                   table_8, table_9, table_10, table_11, table_12, table_13, table_14, table_15, table_16)
   )
-  
+
 national_workbook <- a11ytables::generate_workbook(national_a11ytable)
 
 
@@ -473,7 +458,7 @@ writeData(national_workbook, sheet = "Notes", notes_national_df$url,
 
 
 notes_la_df <- notes_la_df %>%
- select("Note number", "Note text", "Relevant hyperlinks (where appropriate)")
+  select("Note number", "Note text", "Relevant hyperlinks (where appropriate)")
 
 notes_national_df <- notes_national_df %>%
   select("Note number", "Note text", "Relevant hyperlinks (where appropriate)")
@@ -495,14 +480,14 @@ writeData(national_workbook, sheet = "Notes", notes_national_df,
 # For local authorities
 # Saves the a11ytable as an excel sheet 
 for (la in names(las_workbooks)) {
-  file_name <- paste0(la, "_", year, "_final.xlsx")
+  file_name <- paste0(la, "_", year, "_final_substance_use.xlsx")
   output_path <- here("output", year, la, "Suppressed and formatted", file_name)
   saveWorkbook(las_workbooks[[la]], output_path, overwrite = TRUE)
 }
 
 # For national
 # Saves the a11ytable as an excel sheet
-saveWorkbook(national_workbook, here("output", year, "National", "Suppressed and formatted", paste0("National_", year, "_final.xlsx")), overwrite = TRUE)
+saveWorkbook(national_workbook, here("output", year, "National", "Suppressed and formatted", paste0("National_", year, "_final_substance_use.xlsx")), overwrite = TRUE)
 
 
 

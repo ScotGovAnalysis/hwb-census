@@ -66,11 +66,11 @@ all_las <- c(
 
 all_stages <- c(paste0("P", 5:7), paste0("S", 1:6))
 
+survey_names <- c(set_names(all_stages), S4_SU = "S4_SU")
+
 # Define expected pattern for question numbers in header
 # Accepted patterns: Q1. Q1.1. Q11.1 Q1.11 Q11.11
 q_pattern <- "Q\\d{1,2}\\.(\\d{1,2}\\.)?"
-
-pupil_census_year <- 2021
 
 studentnaturesupport_year <- 2021
 

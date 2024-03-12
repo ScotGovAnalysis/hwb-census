@@ -40,25 +40,30 @@ perform_data_suppression <- function(original_data) {
   # Primary and secondary suppression of cells (not including total row)
   count <- 0
   suppressed_output <- list()
-  for (x in output_and_data){
+  for (x in output_and_data) {
     i0 <- 1
     count = count + 1
-    for (i1 in indexes){
+    for (i1 in indexes) {
       
-      current_q <- x$datas[i0:i1,4:ncol(x$datas)]
+      current_q <- x$datas[i0:i1, 4:ncol(x$datas)]
       
-      for(col in 1:ncol(current_q)){
+      # Check if current_q is empty, i.e. no-one answered that question
+      if (nrow(current_q) <= 1) {
+        next  # Skip this iteration if current_q is empty
+      }
+      
+      for (col in 1:ncol(current_q)) {
         
-        if (anyNA(current_q[,col])==FALSE){  # This skips whole columns of current_q if there are any NAs
+        if (anyNA(current_q[, col]) == FALSE) {  # This skips whole columns of current_q if there are any NAs
           
           c_count <- 0
           
-          for(row in 1:(nrow(current_q)-1)){
+          for (row in 1:(nrow(current_q) - 1)) {
             
             # Primary suppression (suppress values less than x and greater than y)
-            if(((current_q[row, col]/100 * current_q[nrow(current_q), col]) < 5) & (current_q[row, col]/100 * current_q[nrow(current_q), col] > 0)){
+            if (((current_q[row, col] / 100 * current_q[nrow(current_q), col]) < 5) & (current_q[row, col] / 100 * current_q[nrow(current_q), col] > 0)) {
               
-              x$outputs[i0+row-1,col] = "[c]"
+              x$outputs[i0 + row - 1, col] = "[c]"
               
               c_count = c_count + 1
               
@@ -67,15 +72,22 @@ perform_data_suppression <- function(original_data) {
           
           # Secondary suppression excluding questions which don't sum to 100% (tick box questions)
           if (c_count == 1 & nrow(current_q) > 2) {
-            current_question <- x$datas[i0+row-1,'Survey question']
-            if (!(current_question %in% c("Where have you been bullied?", 
+            current_question <- x$datas[i0 + row - 1, 'Survey question']
+            if (!(current_question %in% c("Where have you been bullied?",
                                           "Which, if any, of these things have you done in the last year?",
-                                          "Average WEMWBS score"))) {
+                                          "Average WEMWBS score",
+                                          "How do you usually get your cigarettes/tobacco?",
+                                          "use_of_e_cigarettes",
+                                          "smoking_tobacco_and_e_cigarettes",
+                                          "How do you usually get your e-cigarettes/vapes/refills?",
+                                          "Of those who have ever had a proper alcoholic drink, which type of alcohol do you drink daily or weekly?",
+                                          "drugs_use_frequency_agg",
+                                          "Of those who have taken drugs ever, and taken drugs in the last month, which (if any) of these drugs have you taken in the last year?"))) {
               min <- Inf
               
-              for(row in 1:(nrow(current_q)-1)){
+              for (row in 1:(nrow(current_q) - 1)) {
                 
-                if (current_q[row,col]<min && x$outputs[i0+row-1,col]!="[c]"){
+                if (current_q[row, col] < min && x$outputs[i0 + row - 1, col] != "[c]") {
                   min = current_q[row, col]
                   next_lowest_row <- row
                   
@@ -83,7 +95,7 @@ perform_data_suppression <- function(original_data) {
                 
               }
               
-              x$outputs[i0+next_lowest_row-1,col] = "[c]"
+              x$outputs[i0 + next_lowest_row - 1, col] = "[c]"
             }
           }
           
@@ -91,9 +103,9 @@ perform_data_suppression <- function(original_data) {
         
       }
       
-      i0 = i1+1
+      i0 = i1 + 1
     }
-    suppressed_output <- append(suppressed_output,x)
+    suppressed_output <- append(suppressed_output, x)
   }
   
   output_and_data_2 <- list()

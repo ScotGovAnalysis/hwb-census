@@ -6,7 +6,7 @@
 # Written/run on - RStudio Desktop
 # Version of R - 4.2.2
 #
-# Description - Analyses date for substance use from both the S4 substance use survey and the S2 & S4 stage questionnaires
+# Description - Analyses data for substance use from both the S4 substance use survey and the S2 & S4 stage questionnaires
 #########################################################################
 
 

@@ -30,4 +30,4 @@ lookup_la_code <- c("120" = "Angus",
                  "380" = "South Lanarkshire",
                  "395" = "West Dunbartonshire",
                  "400" = "West Lothian"
-                 )
+)

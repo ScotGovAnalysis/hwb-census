@@ -8,7 +8,8 @@
 #
 # Description - This code removes records for pupils who answered the 
 # wrong stage questionnaire, or who responded more than once, or who cannot
-# be linked to the pupil census for analysis.
+# be linked to the pupil census for analysis. This script only looks at HWB 
+# data, not substance use.
 #########################################################################
 
 
@@ -22,18 +23,15 @@ source(here::here("lookups", "lookup_la_code.R"))
 
 ### 1 - Read in raw data ----
 
-# Define the path to Excel file
-file_path <- file.path(raw_data_folder, year, "Merged", "07_validated_school_names.xlsx")
-
-# Read in all sheets into a list of tibbles with names
+# Read all sheets into a list of tibbles (HWB data only)
 raw_data <- set_names(
   map(
     all_stages,
-    ~ read_xlsx(file_path, sheet = .x)
+    ~ read_xlsx(file.path(raw_data_folder, year, "Merged", "07_validated_school_names_hwb.xlsx"), sheet = .x)
   ),
   all_stages
 )
-
+  
 
 
 ### 2 - Add "hwb_stage" column ----
@@ -129,7 +127,7 @@ joined_data <- joined_data %>%
 
 
 
-### 6 - Initialise removed_records as an empty dataframe, with the same column names as joined_data ---
+### 6 - Initialise removed_records as an empty dataframe, with the same column names as joined_data ----
 
 # Records which have been removed from final_data_combined will get added to removed_records along with an explanation of why
 removed_records <-
@@ -139,7 +137,7 @@ removed_records <-
 
 
 
-### 7 - Create function to add rows to removed_records ---
+### 7 - Create function to add rows to removed_records ----
 
 # Function to add rows to removed_records
 # Only add rows from new_dataframe to removed_records if that row does not currently exist in removed_records (i.e. stops a row getting added
@@ -162,7 +160,7 @@ update_removed_records <- function(existing_dataframe, new_dataframe, explanatio
 
 
 
-### 8 - Remove records where a pupil answered the wrong stage questionnaire ---
+### 8 - Remove records where a pupil answered the wrong stage questionnaire ----
 
 # Create a dataframe called inconsistent_stages where hwb_stage != pc_stage
 inconsistent_stages <- joined_data %>%
@@ -185,7 +183,7 @@ removed_records <- update_removed_records(removed_records, inconsistent_stages, 
 
 
 
-# 9 - Remove records where pupil census LA did not take part ---
+# 9 - Remove records where pupil census LA did not take part ----
 
 # Create pc_la_didnt_take_part list
 pc_la_didnt_take_part <- joined_data %>%
@@ -196,7 +194,7 @@ removed_records <- update_removed_records(removed_records, pc_la_didnt_take_part
 
 
 
-### 10 - Remove duplicate SCNs within each stage ---
+### 10 - Remove duplicate SCNs within each stage ----
 
 # Create a modified copy of joined_data
 # This is so we can temporarily pretend P5 & P6, and S5 & S6 pupils are in the same stage
@@ -244,7 +242,7 @@ removed_records <- removed_records %>%
 
 
 
-### 11 - Save removed_records as an excel file to Output folder --- 
+### 11 - Save removed_records as an excel file to Output folder ----
 
 # Save excel file to output folder
 write_xlsx(
@@ -254,7 +252,7 @@ write_xlsx(
 
 
 
-### 12 - Remove records in removed_records from joined_data --- 
+### 12 - Remove records in removed_records from joined_data ---- 
 
 # Remove columns reason_removed, number_questions_answered from removed_records
 removed_records <- removed_records %>%
@@ -285,7 +283,7 @@ joined_data_removed <- joined_data_removed %>%
 
 
 
-### 13 - Add East Renfrewshire records back in ---
+### 13 - Add East Renfrewshire records back in ----
 
 # Get dataframe of East Renfrewshire records
 east_ren <- all_stages_dataframe %>%
@@ -309,8 +307,9 @@ joined_data_removed <- joined_data_removed %>%
 
 
 
-### 14 - Save joined_data_removed as an excel file to Merged folder --- 
+### 14 - Save joined_data_removed as an excel file to Merged folder ----
 
+# Save excel file to output folder
 write_xlsx(
   joined_data_removed,
   file.path(raw_data_folder, year, "Merged", paste0("08_removed_records.xlsx"))
@@ -318,5 +317,3 @@ write_xlsx(
 
 
 ### END OF SCRIPT ###
-
-

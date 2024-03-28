@@ -16,18 +16,14 @@ source(here::here("code", "00_setup.R"))
 source(here::here("functions", "read_raw_data.R"))
 
 
+
 ### 1 - Expected headers ----
 
 # Read in expected headers for each stage and store as a list of data frames
-exp_headers <- 
-  map(
-    set_names(all_stages),
-    ~ read_xlsx(here(
-      "metadata", 
-      year,
-      paste0("hwb_metadata_", tolower(.x), "_column_names.xlsx")
-    ))
-  ) 
+exp_headers <- map(
+  survey_names,
+  ~ read_xlsx(here("metadata", year, paste0("hwb_metadata_", tolower(.x), "_column_names.xlsx")))
+)
 
 # Clean and restructure expected headers data
 # NOTE - slightly different than in scripts 01 and 02
@@ -57,34 +53,60 @@ exp_headers <- exp_headers |>
 
 exp_headers <-
   map(
-    set_names(all_stages),
+    set_names(survey_names),
     ~ exp_headers[[.x]] %>%
         mutate(h = make_clean_names(h)))
 
 
 
-### 2 - Check headers of raw data ----
+### 2 - Read in raw data ----
 
 # Read in each dataframe from 02_validated_headers for each LA and stage
-raw_data <- 
+# Store the data in a nested list structure
+raw_data <- setNames(
+  lapply(
+    map(all_las, function(las) {
+      map(all_stages, function(stage) {
+        # Display a message indicating which file is currently being read
+        cli_inform(sprintf("Reading data for local authority '%s' and stage '%s'", las, stage))
+        
+        # Read raw data for the current combination of local authority and stage
+        read_raw_data(year, las, stage, "02_validated_headers")
+      }) %>% 
+        # Rename the tibbles within the inner list to the corresponding stage names
+        setNames(all_stages)
+    }),
+    # Retain the same structure of the outer list
+    identity
+  ),
+  # Set the names of the outer list to the local authority names
+  all_las
+)
+
+# Read raw data for each local authority for substance use
+# Store the data in a list 
+raw_data_su <- setNames(
   map(all_las, function(las) {
-    map(all_stages, function(stage) {
-      read_raw_data(year, las, stage, "02_validated_headers")
-    })
-  })
+    # Display a message indicating which file is currently being read
+    cli_inform(sprintf("Reading substance use data for local authority '%s'", las))
+    
+    # Read raw data for the current local authority
+    read_raw_data(year, las, "S4", "02_validated_headers_substance_use")
+  }),
+  # Set the names of tibble to the local authority names
+  all_las
+)
 
 
-# Rename elements within raw_data to respective local authority
-names(raw_data) <- c(all_las)
-
-
-# Create function to rename each tibble within list of LA's to correct stage
-rename_tibbles <- function(lst) {
-  names(lst) <- all_stages
-  return(lst)
+# Add each tibble from raw_data_su to each respectively named sublist of tibbles in raw_data, with the name "S4_SU"
+# Loop through each tibble in raw_data_su
+for (i in seq_along(raw_data_su)) {
+  # Extract the ith tibble from raw_data_su
+  tibble_to_add <- raw_data_su[[i]]
+  
+  # Add the tibble to the corresponding sublist in raw_data
+  raw_data[[i]]$S4_SU <- tibble_to_add
 }
-
-raw_data <- lapply(raw_data, rename_tibbles)
 
 
 # Define a function to adjust the header row for each tibble
@@ -132,7 +154,6 @@ rename_columns <- function(tibble) {
 renamed_headers <- lapply(adjusted_headers, function(sublist) {
   lapply(sublist, rename_columns)
 })
-
 
 
 
@@ -188,6 +209,7 @@ for (list_name in names(missing_headers_list)) {
 }
 
 
+
 ### 4 - Rename column headers in adjusted_headers so they match the column "code" in exp_headers ----
 
 # Function to rename tibble column headers
@@ -205,6 +227,8 @@ for (list_name in names(renamed_headers)) {
     )
   }
 }
+
+
 
 ### 5 - Check headers of renamed_headers have all been renamed, flag those which haven't ----
 
@@ -257,7 +281,8 @@ for (list_name in names(missing_headers_list)) {
   }
 }
 
-
+folder_name <- "Angus"
+tibble_name <- "P5"
 
 ### 6 - Save renamed headers ----
 
@@ -269,6 +294,7 @@ for (folder_name in all_las) {
   
   # Loop through each tibble in the list
   for (tibble_name in names(tibble_list)) {
+    if (tibble_name != "S4_SU") {
     # Create the file name for the csv file
     file_name <- file.path(raw_data_folder, year, folder_name, "03_renamed_headers", 
                            paste0(folder_name, "_", tibble_name, ".csv"))
@@ -278,13 +304,20 @@ for (folder_name in all_las) {
     
     # Save the tibble as an csv file
     write.csv(tibble_data, file_name, row.names = FALSE)
+    }
+    else {
+      # Create the file name for the csv file
+      file_name <- file.path(raw_data_folder, year, folder_name, "03_renamed_headers_substance_use", 
+                             paste0(folder_name, "_", tibble_name, ".csv"))
+      
+      # Get the tibble
+      tibble_data <- tibble_list[[tibble_name]]
+      
+      # Save the tibble as an csv file
+      write.csv(tibble_data, file_name, row.names = FALSE)
+    }
   }
 }
 
   
-  
-
-
-
-
-
+### END OF SCRIPT ###  

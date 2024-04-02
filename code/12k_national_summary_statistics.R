@@ -9,6 +9,7 @@
 # Description - Analyses data for national summary statistics
 #########################################################################
 
+
 ### 0 - Setup ----
 
 source(here::here("code", "00_setup.R"))
@@ -17,12 +18,12 @@ source(here::here("functions", "analysis_one_characteristic.R"))
 source(here::here("functions", "analysis_stage_and_characteristic.R"))
 source(here::here("functions", "perform_analysis_national.R"))
 source(here::here("functions", "perform_analysis_local_authority.R"))
-source(here::here("lookups", "lut_la_code.R"))
-source(here::here("lookups", "lut_sex.R"))
-source(here::here("lookups", "lut_ethnic_background.R"))
-source(here::here("lookups", "lut_urbrur6.R"))
-source(here::here("lookups", "lut_asn.R"))
-source(here::here("lookups", "lut_simd.R"))
+source(here::here("lookups", "lookup_la_code.R"))
+source(here::here("lookups", "lookup_sex.R"))
+source(here::here("lookups", "lookup_ethnic_background.R"))
+source(here::here("lookups", "lookup_urbrur6.R"))
+source(here::here("lookups", "lookup_asn.R"))
+source(here::here("lookups", "lookup_simd.R"))
 
 
 
@@ -116,22 +117,22 @@ pupil_census <- pupil_census %>%
 ### 4 - Apply lookup tables to pupil_census ----
 
 # Apply lookup table to pupil_census to rename variables in column "LaCode"
-pupil_census$pc_la <- lut_la_code[pupil_census$pc_la]
+pupil_census$pc_la <- lookup_la_code[pupil_census$pc_la]
 
 # Apply lookup table to pupil_census to rename variables in column "Gender"
-pupil_census$Gender <- lut_sex[pupil_census$Gender]
+pupil_census$Gender <- lookup_sex[pupil_census$Gender]
 
 # Apply lookup table to pupil_census to rename variables in column "EthnicBackground"
-pupil_census$EthnicBackground <- lut_ethnic_background[pupil_census$EthnicBackground]
+pupil_census$EthnicBackground <- lookup_ethnic_background[pupil_census$EthnicBackground]
 
 # Apply lookup table to pupil_census to rename variables in column "UrbRur6"
-pupil_census$UrbRur6 <- lut_urbrur6[pupil_census$UrbRur6]
+pupil_census$UrbRur6 <- lookup_urbrur6[pupil_census$UrbRur6]
 
 # Apply lookup table to pupil_census to rename variables in column "asn"
-pupil_census$asn <- lut_asn[pupil_census$asn]
+pupil_census$asn <- lookup_asn[pupil_census$asn]
 
 # Apply lookup table to pupil_census to rename variables in column "SIMD2020v2_Quintile"
-pupil_census$SIMD2020v2_Quintile <- lut_simd[pupil_census$SIMD2020v2_Quintile]
+pupil_census$SIMD2020v2_Quintile <- lookup_simd[pupil_census$SIMD2020v2_Quintile]
 
 # Remove local authorities that didn't participate in HWB survey
 pupil_census <- pupil_census %>%
@@ -205,5 +206,3 @@ write_xlsx(
 
 
 ### END OF SCRIPT ###
-
-

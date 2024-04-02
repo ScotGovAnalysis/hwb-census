@@ -249,13 +249,13 @@ local_authority_list <- map(local_authority_list, function(inner_list) {
 # Save national
 write_xlsx(
   national_neighbourhood,
-  here("output", year, "National", "Output", paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
+  here("output", year, "National", paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
+  file_path <- here::here("output", year, folder_name, paste0(year, "_neighbourhood_and_life_at_home.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

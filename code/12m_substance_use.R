@@ -779,7 +779,7 @@ folder_names <- sub("_.*", "", names(all_hwb))
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets_hwb <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_substance_use_(S2_and_S4_stage_questionnaire).xlsx"))
+  file_path <- here::here("output", year, folder_name, paste0(year, "_substance_use_(S2_and_S4_stage_questionnaire).xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,
@@ -793,7 +793,7 @@ map2(all_hwb, folder_names, save_tibbles_as_sheets_hwb)
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets_su <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_substance_use_(S4_substance_use_survey).xlsx"))
+  file_path <- here::here("output", year, folder_name, paste0(year, "_substance_use_(S4_substance_use_survey).xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

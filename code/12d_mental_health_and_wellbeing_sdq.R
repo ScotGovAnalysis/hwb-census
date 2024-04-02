@@ -211,13 +211,13 @@ for (value in all_las) {
 # Save national
 write_xlsx(
   national_sdq,
-  here("output", year, "National", "Output", paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
+  here("output", year, "National", paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
+  file_path <- here::here("output", year, folder_name, paste0(year, "_mental_health_and_wellbeing_sdq.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,

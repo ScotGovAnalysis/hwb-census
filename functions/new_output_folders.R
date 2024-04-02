@@ -14,7 +14,7 @@ new_output_folders <- function(year, la, output_folder) {
   
   folders <- paste0(
     dir, "/", 
-    c("Output", "Suppressed and formatted")
+    c("Suppressed and formatted")
   )
   
   purrr::walk(

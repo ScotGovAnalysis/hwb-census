@@ -104,4 +104,3 @@ map2(local_authority_list, all_las, save_tibbles_as_sheets)
 
 
 ### END OF SCRIPT ###
-

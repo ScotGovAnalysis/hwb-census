@@ -55,7 +55,7 @@ all_raw_data <- list()
 # Loop through each directory
 for (las in all_las) {
   # Set the file path for the current directory
-  file_path <- here("output", year, las, "Output")
+  file_path <- here("output", year, las)
   
   # Inform user about the directory being processed
   cat("Processing directory:", file_path, "\n")
@@ -68,7 +68,7 @@ for (las in all_las) {
 }
 
 # Read data from the "National" folder and add to all_raw_data list
-national_file_path <- here("output", year, "National", "Output")
+national_file_path <- here("output", year, "National")
 cat("Processing directory:", national_file_path, "\n")
 national_raw_data <- read_excel_files(national_file_path)
 all_raw_data[["National"]] <- national_raw_data
@@ -490,6 +490,4 @@ for (la in names(las_workbooks)) {
 saveWorkbook(national_workbook, here("output", year, "National", "Suppressed and formatted", paste0("National_", year, "_final_substance_use.xlsx")), overwrite = TRUE)
 
 
-
 ### END OF SCRIPT ###
-

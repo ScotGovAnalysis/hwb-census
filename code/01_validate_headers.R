@@ -7,7 +7,7 @@
 # Version of R - 4.2.2
 #
 # Description - Validates headers of submitted data files and creates an
-# excel file summarising issues by local authority and Stage
+# excel file summarising issues by local authority and stage
 #########################################################################
 
 

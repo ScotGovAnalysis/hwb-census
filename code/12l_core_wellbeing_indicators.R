@@ -128,7 +128,7 @@ all_topics <- c(
 
 # For national
 national_other_topics <- map(set_names(all_topics), function(topic) {
-  file_path <- here("output", year, "National", "Output", paste0(year, "_", tolower(topic), ".xlsx"))
+  file_path <- here("output", year, "National", paste0(year, "_", tolower(topic), ".xlsx"))
   # Get sheet names from the Excel file
   sheets <- excel_sheets(file_path)
   
@@ -151,7 +151,6 @@ read_other_topics <- function(la) {
       "output", 
       year,
       la,
-      "Output",
       paste0(year, "_", tolower(.x), ".xlsx")
     )),
     ~ {
@@ -159,7 +158,6 @@ read_other_topics <- function(la) {
         "output", 
         year,
         la,
-        "Output",
         paste0(year, "_", tolower(.x), ".xlsx")
       )
       sheets <- excel_sheets(file_path)  # Get all sheet names
@@ -246,13 +244,13 @@ for (ind in indicators) {
 # Save national
 write_xlsx(
   national_core_wellbeing_indicators,
-  here("output", year, "National", "Output", paste0(year, "_core_wellbeing_indicators.xlsx"))
+  here("output", year, "National", paste0(year, "_core_wellbeing_indicators.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_core_wellbeing_indicators.xlsx"))
+  file_path <- here::here("output", year, folder_name, paste0(year, "_core_wellbeing_indicators.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,
@@ -265,4 +263,3 @@ map2(local_authority_list, all_las, save_tibbles_as_sheets)
 
 
 ### END OF SCRIPT ###
-

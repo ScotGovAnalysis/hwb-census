@@ -9,6 +9,7 @@
 # Description - Analyses data for carers analysis
 #########################################################################
 
+
 ### 0 - Setup ----
 
 source(here::here("code", "00_setup.R"))
@@ -88,13 +89,13 @@ for (la in all_las) {
 # Save national
 write_xlsx(
   national_carers_analysis,
-  here("output", year, "National", "Output", paste0(year, "_carers_analysis.xlsx"))
+  here("output", year, "National", paste0(year, "_carers_analysis.xlsx"))
 )
 
 # Save local authorities
 # Function to save tibbles in respective folders
 save_tibbles_as_sheets <- function(tibble_list, folder_name) {
-  file_path <- here::here("output", year, folder_name, "Output", paste0(year, "_carers_analysis.xlsx"))
+  file_path <- here::here("output", year, folder_name, paste0(year, "_carers_analysis.xlsx"))
   write_xlsx(
     tibble_list,
     path = file_path,
@@ -106,6 +107,4 @@ save_tibbles_as_sheets <- function(tibble_list, folder_name) {
 map2(local_authority_list, all_las, save_tibbles_as_sheets)
 
 
-
 ### END OF SCRIPT ###
-

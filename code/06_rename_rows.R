@@ -59,7 +59,7 @@ validated_rows <- lapply(validated_rows, function(tibble) {
 
 
 
-### 4 - For P3 the question frequency_physical_activity ----
+### 4 - For S3 the question frequency_physical_activity ----
 
 # Replace "At least once a month but not every week" with "Once a month"
 validated_rows$S3 <- validated_rows$S3 %>%
@@ -208,11 +208,11 @@ validated_rows$S4_SU <- validated_rows$S4_SU %>%
     cigarettes_daily_number == "05-Jun" ~ "5-6",
     cigarettes_daily_number == "07-Aug" ~ "7-8",
     cigarettes_daily_number == "09-Oct" ~ "9-10",
-    cigarettes_daily_number == "44654" ~ NA_character_,
-    cigarettes_daily_number == "44593" ~ NA_character_,
-    cigarettes_daily_number == "44843" ~ NA_character_,
-    cigarettes_daily_number == "44717" ~ NA_character_,
-    cigarettes_daily_number == "44780" ~ NA_character_,
+    cigarettes_daily_number == "44593" ~ "1-2",
+    cigarettes_daily_number == "44654" ~ "3-4",
+    cigarettes_daily_number == "44717" ~ "5-6",
+    cigarettes_daily_number == "44780" ~ "7-8",
+    cigarettes_daily_number == "44843" ~ "9-10",
     TRUE ~ cigarettes_daily_number
   ))
 

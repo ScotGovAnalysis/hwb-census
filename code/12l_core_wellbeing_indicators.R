@@ -55,7 +55,7 @@ hwb_analysis$'Participated in a positive leisure activity this year' <- apply(hw
     return(NA)
   } else if (all(row == "Data not collected")) {
     return("Data not collected")
-  } else if ("Yes" %in% row) {
+  } else if ("Yes" %in% row[setdiff(names(row), "positive_activities_none")]) {
     return("Participated in leisure activity")
   } else {
     return("Did not participate")

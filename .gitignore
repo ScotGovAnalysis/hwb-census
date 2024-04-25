@@ -27,3 +27,6 @@ output/
 
 # Include metadata files
 !metadata/*/*.xlsx
+
+# Exclude config
+config.R

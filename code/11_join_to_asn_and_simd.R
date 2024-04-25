@@ -13,6 +13,7 @@
 
 ### 0 - Setup ----
 
+source(here::here("config.R"))
 source(here::here("code", "00_setup.R"))
 source(here::here("functions", "read_raw_data.R"))
 source(here::here("lookups", "lookup_sex.R"))
@@ -41,7 +42,7 @@ query <- glue("SELECT StudentId,
 
 # Execute the query
 asn_data <- execute_sql(
-  server = "s0855a\\dbXed",
+  server = dbxed_server,
   database = "char_and_ref",
   sql = query,
   output = TRUE

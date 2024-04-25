@@ -15,6 +15,7 @@
 
 ### 0 - Setup ----
 
+source(here::here("config.R"))
 source(here::here("code", "00_setup.R"))
 source(here::here("functions", "read_raw_data.R"))
 source(here::here("lookups", "lookup_la_code.R"))
@@ -101,7 +102,7 @@ query <- glue("SELECT ScottishCandidateNumber as 'pc_scn',
 
 # Execute the query
 pupil_census <- execute_sql(
-  server = "s0855a\\dbXed",
+  server = dbxed_server,
   database = "char_and_ref",
   sql = query,
   output = TRUE

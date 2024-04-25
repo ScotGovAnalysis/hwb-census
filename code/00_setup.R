@@ -35,6 +35,7 @@ library(a11ytables)
 
 ### 2 - Load functions (from functions folder) ----
 
+source(here("config.R"))
 source(here("functions", "check_headers.R"))
 source(here("functions", "clean_strings.R"))
 source(here("functions", "new_folders.R"))
@@ -45,7 +46,7 @@ source(here("functions", "new_output_folders.R"))
 
 ### 3 - Set file path for raw data and output folders ----
 
-raw_data_folder <- "//s0196a/ADM-Education-NIF Analysis/Health and Wellbeing Survey/R/RAP Project/raw_data"
+raw_data_folder <- paste0(adm_server, "/Health and Wellbeing Survey/R/RAP Project/raw_data")
 
 output_folder <- here("output")
 

@@ -41,7 +41,7 @@ query <- glue("SELECT StudentId,
 
 # Execute the query
 asn_data <- execute_sql(
-  server = "s0855a\\dbXed",
+  server = dbxed_server,
   database = "char_and_ref",
   sql = query,
   output = TRUE

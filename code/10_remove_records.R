@@ -101,7 +101,7 @@ query <- glue("SELECT ScottishCandidateNumber as 'pc_scn',
 
 # Execute the query
 pupil_census <- execute_sql(
-  server = "s0855a\\dbXed",
+  server = dbxed_server,
   database = "char_and_ref",
   sql = query,
   output = TRUE

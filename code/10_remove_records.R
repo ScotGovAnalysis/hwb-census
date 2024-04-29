@@ -15,7 +15,6 @@
 
 ### 0 - Setup ----
 
-source(here::here("config.R"))
 source(here::here("code", "00_setup.R"))
 source(here::here("functions", "read_raw_data.R"))
 source(here::here("lookups", "lookup_la_code.R"))

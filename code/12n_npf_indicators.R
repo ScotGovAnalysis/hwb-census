@@ -187,7 +187,7 @@ national_npf <- perform_analysis_national(hwb_analysis, variables)
 ### 8 - Remove tibbles which aren't needed ----
 
 # Select only the tibbles required
-national_npf <- national_npf[c("stage", "sex", "simd", "urbrur6", "ethnic_group", "long_term_condition")]
+national_npf <- national_npf[c("stage", "sex", "simd", "urbrur6", "ethnic_group", "care_for_someone", "long_term_condition")]
 
 # Add a new column 'Survey topic' at the start of each tibble with the constant value "NPF indicators"
 national_npf <- map(national_npf, ~ {

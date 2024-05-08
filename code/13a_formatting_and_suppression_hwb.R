@@ -27,7 +27,7 @@ read_excel_files <- function(directory) {
   raw_data <- list()
   
   for (file in excel_files) {
-    if (!grepl("core_wellbeing_indicators", file) & !grepl("substance_use", file)) {  # Check if the file name contains "core_wellbeing_indicators" or "substance_use"
+    if (!grepl("core_wellbeing_indicators", file) & !grepl("substance_use", file) & !grepl("carers_analysis", file)) {  # Check if the file name contains "core_wellbeing_indicators" or "substance_use" or "carers_analysis"
       cat("Reading file:", file, "\n")
       
       file_name <- tools::file_path_sans_ext(basename(file))
@@ -40,7 +40,7 @@ read_excel_files <- function(directory) {
       
       raw_data[[file_name]] <- sheet_data
     } else {
-      cat("Skipping file containing 'core_wellbeing_indicators' or 'substance_use':", file, "\n")
+      cat("Skipping file containing 'core_wellbeing_indicators' or 'substance_use' or 'carers_analysis':", file, "\n")
     }
   }
   
@@ -193,8 +193,8 @@ las_suppressed <- lapply(combined_data_las, perform_data_suppression)
 # For national
 national_suppressed <- perform_data_suppression(combined_data_national)
 
-
-
+test <- national_suppressed$stage_and_sex
+original_data <- combined_data_national
 ### 5 - Format data as dataframes ----
 
 # For local authorities

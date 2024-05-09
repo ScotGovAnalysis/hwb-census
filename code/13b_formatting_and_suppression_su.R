@@ -17,6 +17,7 @@ source(here::here("code", "00_setup.R"))
 source(here::here("functions", "read_raw_data.R"))
 source(here::here("functions", "perform_data_suppression.R"))
 source(here::here("functions", "perform_formatting.R"))
+source(here::here("functions", "reorder_columns.R"))
 
 
 
@@ -191,7 +192,18 @@ formatted_data_las <- lapply(las_suppressed, perform_formatting)
 
 
 
-### 6 - Produce a11ytables template and convert to workbook ----
+### 6 - Re-order columns ----
+
+# Apply the reorder_columns function to the list of lists of dataframes formatted_data_las
+formatted_data_las <- lapply(formatted_data_las, function(inner_list) {
+  # Apply the reorder_columns function to each dataframe in the inner list
+  reordered_inner_list <- lapply(inner_list, reorder_columns)
+  return(reordered_inner_list)
+})
+
+
+
+### 7 - Produce a11ytables template and convert to workbook ----
 
 cover_list <- list(
   "Summary Statistics for Health and Wellbeing Census 2021-22" = 
@@ -344,7 +356,7 @@ notes_national_df <- data.frame(
 
 
 
-### 7 - Create ally_tables ----
+### 8 - Create ally_tables ----
 
 # For each local authority 
 las_workbooks <- list()
@@ -466,7 +478,7 @@ national_workbook <- a11ytables::generate_workbook(national_a11ytable)
 
 
 
-### 8 - Format hyperlinks in the Notes page ----
+### 9 - Format hyperlinks in the Notes page ----
 
 # We need a manual workaround to do this, rather than doing it in a11ytables because a11ytables has no functionality for embedding hyperlinks in dataframes, only lists
 class(notes_la_df$url)<-"hyperlink" # mark as a hyperlink
@@ -501,7 +513,7 @@ writeData(national_workbook, sheet = "Notes", notes_national_df,
 
 
 
-### 9 - Save outputs as an excel file to Merged folder ----
+### 10 - Save outputs as an excel file to Merged folder ----
 
 # For local authorities
 # Saves the a11ytable as an excel sheet 

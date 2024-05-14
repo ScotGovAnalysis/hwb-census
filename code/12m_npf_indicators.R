@@ -156,7 +156,37 @@ hwb_analysis$'Total difficulties score % - four band scale' <- ifelse(
 
 
 
-### 6 - Define variables for analysis ----
+### 6 - Aggregate up EthnicBackground column ----
+
+# Define lookup table
+lookup_ethnic_background <- c("White - Scottish" = "White - Scottish",
+                              "African - African / Scottish / British" = "African / Black / Caribbean",
+                              "Caribbean or Black - Caribbean / British / Scottish" = "African / Black / Caribbean",
+                              "Asian - Indian/British/Scottish" = "Asian",
+                              "Asian - Pakistani / British / Scottish" = "Asian",
+                              "Asian - Bangladeshi / British / Scottish" = "Asian",
+                              "Asian - Chinese / British / Scottish" = "Asian",
+                              "White - Other" = "White - Other",
+                              "Not Disclosed" = "Other groups or not known",
+                              "Mixed or multiple ethnic groups" = "Mixed or multiple ethnic groups",
+                              "Asian - Other" = "Asian",
+                              "White - Gypsy/Traveller" = "White - Other",
+                              "White - Other British" = "White - Other British",
+                              "White - Irish" = "White - Other",
+                              "White - Polish" = "White - Other",
+                              "Caribbean or Black - Other" = "African / Black / Caribbean",
+                              "African - Other" = "African / Black / Caribbean",
+                              "Other - Arab" = "Other groups or not known",
+                              "Not known" = "Other groups or not known",
+                              "Other - Other" = "Other groups or not known",
+                              "Not known" = "Other groups or not known")
+
+# Apply lookup table to hwb_analysis to rename variables in column "EthnicBackground"
+hwb_analysis$EthnicBackground <- lookup_ethnic_background[hwb_analysis$EthnicBackground]
+
+
+
+### 7 - Define variables for analysis ----
 
 variables <- data.frame(
   variable = c("number_close_friends",
@@ -177,14 +207,14 @@ variables <- data.frame(
 
 
 
-### 7 - Perform analysis on selected variables ----
+### 8 - Perform analysis on selected variables ----
 
 # For national
 national_npf <- perform_analysis_national(hwb_analysis, variables)
 
 
 
-### 8 - Remove tibbles which aren't needed ----
+### 9 - Remove tibbles which aren't needed ----
 
 # Select only the tibbles required
 national_npf <- national_npf[c("stage", "sex", "simd", "urbrur6", "ethnic_group", "care_for_someone", "long_term_condition")]
@@ -202,7 +232,7 @@ national_npf <- map(national_npf, ~ {
 
 
 
-### 9 - Read in survey questions for publication metadata ----
+### 10 - Read in survey questions for publication metadata ----
 
 # This is used to replace values in the 'Survey question' column when formatting
 survey_question_metadata <-
@@ -215,21 +245,21 @@ survey_question_metadata$survey_question <- gsub("\\s*\\[note \\d+\\]", "", surv
 
 
 
-### 10 - Perform data suppression ----
+### 11 - Perform data suppression ----
 
 # For national
 national_npf_suppressed <- perform_data_suppression(national_npf)
 
 
 
-### 11 - Format data as dataframes ----
+### 12 - Format data as dataframes ----
 
 # For national
 national_npf_formatted <- perform_formatting(national_npf_suppressed)
 
 
 
-### 12 - Save outputs as an excel file to Merged folder ----
+### 13 - Save outputs as an excel file to Merged folder ----
 
 # Save national
 write_xlsx(

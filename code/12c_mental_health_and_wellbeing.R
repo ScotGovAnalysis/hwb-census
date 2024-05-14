@@ -64,11 +64,6 @@ hwb_analysis[hwb_analysis == "Agree"] <- "Strongly agree or Agree"
 hwb_analysis[hwb_analysis == "Strongly disagree"] <- "Strongly disagree or Disagree"
 hwb_analysis[hwb_analysis == "Disagree"] <- "Strongly disagree or Disagree"
 
-hwb_analysis$frequency_feeling_confident[hwb_analysis$frequency_feeling_confident == "Often"] <- "Often or All of the time"
-hwb_analysis$frequency_feeling_confident[hwb_analysis$frequency_feeling_confident == "All of the time"] <- "Often or All of the time"
-hwb_analysis$frequency_feeling_confident[hwb_analysis$frequency_feeling_confident == "Rarely"] <- "Rarely or None of the time"
-hwb_analysis$frequency_feeling_confident[hwb_analysis$frequency_feeling_confident == "None of the time"] <- "Rarely or None of the time"
-
 hwb_analysis$frequency_feeling_lonely[hwb_analysis$frequency_feeling_lonely == "Often"] <- "Often or Always"
 hwb_analysis$frequency_feeling_lonely[hwb_analysis$frequency_feeling_lonely == "Often or always"] <- "Often or Always"
 hwb_analysis$frequency_feeling_lonely[hwb_analysis$frequency_feeling_lonely == "Some of the time"] <- "Sometimes"
@@ -88,6 +83,19 @@ hwb_analysis[hwb_analysis == "About 4 hours a day"] <- "3-5 hours"
 hwb_analysis[hwb_analysis == "About 5 hours a day"] <- "3-5 hours"
 hwb_analysis[hwb_analysis == "About 6 hours a day"] <- "6 or more hours"
 hwb_analysis[hwb_analysis == "About 7 hours or more a day"] <- "6 or more hours"
+
+
+# Combine columns wemwbs_10_confident and frequency_feeling_confident into one column called 'How often have you been feeling confident?'
+# This is because the question was asked differently of different stages (frequency_feeling_confident P5-S1 and wemwbs_10_confident S2-S6)
+
+hwb_analysis$'How often have you been feeling confident?' <- ifelse(hwb_analysis$pc_stage %in% c("P5", "P6", "P7", "S1"),
+                                                                    hwb_analysis$frequency_feeling_confident,
+                                                                    hwb_analysis$wemwbs_10_confident)
+
+hwb_analysis$'How often have you been feeling confident?'[hwb_analysis$'How often have you been feeling confident?' == "Often"] <- "Often or All of the time"
+hwb_analysis$'How often have you been feeling confident?'[hwb_analysis$'How often have you been feeling confident?' == "All of the time"] <- "Often or All of the time"
+hwb_analysis$'How often have you been feeling confident?'[hwb_analysis$'How often have you been feeling confident?' == "Rarely"] <- "Rarely or None of the time"
+hwb_analysis$'How often have you been feeling confident?'[hwb_analysis$'How often have you been feeling confident?' == "None of the time"] <- "Rarely or None of the time"
 
 
 
@@ -159,7 +167,7 @@ variables <- data.frame(
                "generally_cheerful",
                "lots_of_worries",
                "I_will_be_ok",
-               "frequency_feeling_confident",
+               "How often have you been feeling confident?",
                "frequency_feeling_lonely",
                "frequency_feeling_left_out",
                "happy_with_my_body",

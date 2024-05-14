@@ -48,9 +48,10 @@ analysis_one_characteristic <- function(dataset, var, que, que_quo, cat_order) {
     rename(`Total %` = n)
   
   # Step 3: Combine the calculated percentages and totals, and add the survey question as a column
-  c <- bind_cols(a, select(b, -intersect(names(a), names(b)))) %>% 
-    mutate("Survey question" = que_quo) %>% 
-    rename("Response" = que_quo) %>% 
+  c <- a %>%
+    left_join(b, by = que_quo) %>%
+    mutate(`Survey question` = que_quo) %>% 
+    rename(Response = que_quo) %>%
     arrange(match(Response, cat_vector))
   
   # Step 4: Move "Survey question" to the first column position

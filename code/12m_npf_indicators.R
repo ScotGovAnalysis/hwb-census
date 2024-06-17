@@ -81,8 +81,6 @@ hwb_analysis$'How often have you been feeling confident?'[hwb_analysis$'How ofte
 # Extract columns that begin with "positive_activities"
 positive_activities_cols <- grep("^positive_activities", names(hwb_analysis), value = TRUE)
 
-
-# Create a new column 'Participated in a positive leisure activity this year'
 hwb_analysis$'Participated in a positive leisure activity this year' <- apply(hwb_analysis[positive_activities_cols], 1, function(row) {
   if (all(row == "Question not asked of stage")) {
     return("Question not asked of stage")
@@ -90,7 +88,9 @@ hwb_analysis$'Participated in a positive leisure activity this year' <- apply(hw
     return(NA)
   } else if (all(row == "Data not collected")) {
     return("Data not collected")
-  } else if ("Yes" %in% row[setdiff(names(row), "positive_activities_none")]) {
+  } else if (all(row == "No")) {
+    return(NA)
+  } else if ("Yes" %in% row[setdiff(names(row), "positive_activities_none_of_above")]) {
     return("Participated in leisure activity")
   } else {
     return("Did not participate")
